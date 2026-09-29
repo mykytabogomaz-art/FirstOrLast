@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тренажер часу - Задачі</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Додаткові стилі для ідеального вміщення таблиці */
+        .compact-table td {
+            padding: 0.35rem 0.5rem;
+        }
+    </style>
+</head>
+<body class="bg-slate-200 text-slate-800 h-screen flex items-center justify-center p-2 md:p-6 m-0">
+
+    <!-- Головний єдиний блок додатку -->
+    <div class="bg-white w-full max-w-7xl h-full max-h-[96vh] rounded-3xl shadow-xl flex flex-col md:flex-row overflow-hidden border border-slate-300">
+        
+        <!-- Ліва частина: Вікторина -->
+        <div class="flex-1 flex flex-col p-6 md:p-10 overflow-y-auto relative">
+            <div id="quiz-container" class="w-full max-w-2xl mx-auto text-left">
+                <!-- Нумерація питань -->
+                <div id="question-counter" class="text-sm font-bold text-slate-400 mb-3 uppercase tracking-wider text-center">Питання 1 / 10</div>
+                
+                <!-- Умова задачі -->
+                <h2 class="text-xl font-semibold mb-12 text-slate-800 p-5 bg-slate-50 border border-slate-200 rounded-2xl shadow-sm leading-relaxed" id="question-text">
+                    <!-- Текст задачі генерується через JS -->
+                </h2>
+                
+                <!-- Допоміжні питання в одному блоці -->
+                <div class="bg-indigo-50/50 border border-indigo-100 rounded-2xl p-5 mb-10 shadow-sm mt-4">
+                    <div id="sub-questions-container" class="space-y-3">
+                        <!-- Інпути генеруються через JS -->
+                    </div>
+                </div>
+
+                <!-- Блок складання відповіді (В одну лінію) -->
+                <div class="mt-4 pt-6 border-t border-slate-200">
+                    <div id="selects-container" class="flex flex-row flex-wrap items-center gap-3">
+                        <!-- Селекти та слово "Відповідь:" генеруються через JS -->
+                    </div>
+                </div>
+
+                <!-- Кнопки керування -->
+                <button id="check-btn" onclick="checkAnswer()" class="mt-10 w-full py-3.5 bg-blue-600 text-white rounded-xl font-semibold text-lg hover:bg-blue-700 transition shadow-md">
+                    Перевірити
+                </button>
+                <button id="next-btn" onclick="nextQuestion()" class="hidden mt-10 w-full py-3.5 bg-slate-800 text-white rounded-xl font-semibold text-lg hover:bg-slate-700 transition shadow-md">
+                    Наступне питання
+                </button>
+            </div>
+        </div>
+
+        <!-- Права частина: Довідкова таблиця на 24 години -->
+        <div class="w-full md:w-[380px] bg-white border-l border-slate-200 flex flex-col h-full overflow-hidden">
+            <div class="flex-1 overflow-y-auto flex flex-col justify-center p-2 text-[0.8rem] lg:text-xs">
+                <table class="w-full border-collapse compact-table my-auto">
+                    <tbody>
+                        <!-- НІЧ (4 години) -->
+                        <tr class="border-b border-slate-100">
+                            <td class="font-mono text-slate-700 w-2/3">00:00 північ</td>
+                            <td class="bg-gray-100 text-center rounded-tr-lg" rowspan="4">
+                                <div class="flex flex-col items-center justify-center">
+                                    <span class="text-2xl mb-1">🌙</span>
+                                    <span class="font-bold text-gray-700">ніч</span>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="border-b border-slate-100"><td class="font-mono text-slate-700">01:00 перша ночі</td></tr>
+                        <tr class="border-b border-slate-100"><td class="font-mono text-slate-700">02:00 друга ночі</td></tr>
+                        <tr class="border-b border-slate-100"><td class="font-mono text-slate-700">03:00 третя ночі</td></tr>
+
+                        <!-- РАНОК (8 годин) - Додано товсту лінію зверху (border-t-2) -->
+                        <tr class="border-b border-slate-100 border-t-2 border-t-slate-400">
+                            <td class="font-mono text-slate-700">04:00 четверта ранку</td>
+                            <td class="bg-green-100 text-center" rowspan="8">
+                                <div class="flex flex-col items-center justify-center">
+                                    <span class="text-2xl mb-1">🌅</span>
+                                    <span class="font-bold text-green-800">ранок</span>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="border-b border-slate-100"><td class="font-mono text-slate-700">05:00 п'ята ранку</td></tr>
+                        <tr class="border-b border-slate-100"><td class="font-mono text-slate-700">06:00 шоста ранку</td></tr>
+                        <tr class="border-b border-slate-100"><td class="font-mono text-slate-700">07:00 сьома ранку</td></tr>
+                        <tr class="border-b border-slate-100"><td class="font-mono text-slate-700">08:00 восьма ранку</td></tr>
+                        <tr class="border-b border-slate-100"><td class="font-mono text-slate-700">09:00 дев'ята ранку</td></tr>
+                        <tr class="border-b border-slate-100"><td class="font-mono text-slate-700">10:00 десята ранку</td></tr>
+                        <tr class="border-b border-slate-100"><td class="font-mono text-slate-700">11:00 одинадцята ранку</td></tr>
+
+                        <!-- ДЕНЬ (5 годин) - Додано товсту лінію зверху (border-t-2) -->
+                        <tr class="border-b border-slate-100 border-t-2 border-t-slate-400">
+                            <td class="font-mono text-slate-700">12:00 дванадцята дня</td>
+                            <td class="bg-orange-100 text-center" rowspan="5">
+                                <div class="flex flex-col items-center justify-center">
+                                    <span class="text-2xl mb-1">☀️</span>
+                                    <span class="font-bold text-orange-800">день</span>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="border-b border-slate-100"><td class="font-mono text-slate-700">13:00 перша дня</td></tr>
+                        <tr class="border-b border-slate-100"><td class="font-mono text-slate-700">14:00 друга дня</td></tr>
+                        <tr class="border-b border-slate-100"><td class="font-mono text-slate-700">15:00 третя дня</td></tr>
+                        <tr class="border-b border-slate-100"><td class="font-mono text-slate-700">16:00 четверта дня</td></tr>
+
+                        <!-- ВЕЧІР (7 годин) - Додано товсту лінію зверху (border-t-2) -->
+                        <tr class="border-b border-slate-100 border-t-2 border-t-slate-400">
+                            <td class="font-mono text-slate-700">17:00 п'ята вечора</td>
+                            <td class="bg-purple-100 text-center rounded-br-lg" rowspan="7">
+                                <div class="flex flex-col items-center justify-center">
+                                    <span class="text-2xl mb-1">🌇</span>
+                                    <span class="font-bold text-purple-800">вечір</span>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="border-b border-slate-100"><td class="font-mono text-slate-700">18:00 шоста вечора</td></tr>
+                        <tr class="border-b border-slate-100"><td class="font-mono text-slate-700">19:00 сьома вечора</td></tr>
+                        <tr class="border-b border-slate-100"><td class="font-mono text-slate-700">20:00 восьма вечора</td></tr>
+                        <tr class="border-b border-slate-100"><td class="font-mono text-slate-700">21:00 дев'ята вечора</td></tr>
+                        <tr class="border-b border-slate-100"><td class="font-mono text-slate-700">22:00 десята вечора</td></tr>
+                        <tr class="border-b border-slate-100"><td class="font-mono text-slate-700">23:00 одинадцята вечора</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Дані для 10 питань з порожніми підказками. 
+        // Різниця у часі тепер у кожному питанні становить від 1 до 3 годин.
+        const questions = [
+            {
+                text: "Сашко прийшов у школу о 10:20, Андрій прийшов о 09:15, а Іван о 08:00. Хто прийшов у школу першим?",
+                subQuestions: [
+                    { label: "Коли прийшов Сашко до школи?", answers: ["10:20", "10.20"] },
+                    { label: "Коли прийшов Андрій до школи?", answers: ["09:15", "9:15", "09.15", "9.15"] },
+                    { label: "Коли прийшов Іван до школи?", answers: ["08:00", "8:00", "08.00", "8.00"] }
+                ],
+                selects: [
+                    { options: ["", "Сашко", "Андрій", "Іван"], correct: "Іван" },
+                    { options: ["", "прийшов у школу", "пішов зі школи"], correct: "прийшов у школу" },
+                    { options: ["", "першим.", "останнім."], correct: "першим." }
+                ]
+            },
+            {
+                text: "Оля прокинулась о 07:10, Марія о 08:30, а Дарина о 06:05. Хто прокинувся останнім?",
+                subQuestions: [
+                    { label: "Коли прокинулась Оля?", answers: ["07:10", "7:10", "07.10", "7.10"] },
+                    { label: "Коли прокинулась Марія?", answers: ["08:30", "8:30", "08.30", "8.30"] },
+                    { label: "Коли прокинулась Дарина?", answers: ["06:05", "6:05", "06.05", "6.05"] }
+                ],
+                selects: [
+                    { options: ["", "Оля", "Марія", "Дарина"], correct: "Марія" },
+                    { options: ["", "прокинулась", "заснула"], correct: "прокинулась" },
+                    { options: ["", "першою.", "останньою."], correct: "останньою." }
+                ]
+            },
+            {
+                text: "Автобус номер 1 приїхав о 13:40, автобус номер 2 о 14:55, а автобус номер 3 о 12:35. Який автобус приїхав першим?",
+                subQuestions: [
+                    { label: "Коли приїхав автобус номер 1?", answers: ["13:40", "13.40"] },
+                    { label: "Коли приїхав автобус номер 2?", answers: ["14:55", "14.55"] },
+                    { label: "Коли приїхав автобус номер 3?", answers: ["12:35", "12.35"] }
+                ],
+                selects: [
+                    { options: ["", "Автобус номер 1", "Автобус номер 2", "Автобус номер 3"], correct: "Автобус номер 3" },
+                    { options: ["", "приїхав", "від'їхав"], correct: "приїхав" },
+                    { options: ["", "першим.", "останнім."], correct: "першим." }
+                ]
+            },
+            {
+                text: "Максим почав робити уроки о 16:15, Денис о 17:45, а Артем о 15:00. Хто почав робити уроки останнім?",
+                subQuestions: [
+                    { label: "Коли Максим почав робити уроки?", answers: ["16:15", "16.15"] },
+                    { label: "Коли Денис почав робити уроки?", answers: ["17:45", "17.45"] },
+                    { label: "Коли Артем почав робити уроки?", answers: ["15:00", "15.00"] }
+                ],
+                selects: [
+                    { options: ["", "Максим", "Денис", "Артем"], correct: "Денис" },
+                    { options: ["", "почав робити уроки", "закінчив робити уроки"], correct: "почав робити уроки" },
+                    { options: ["", "першим.", "останнім."], correct: "останнім." }
+                ]
+            },
+            {
+                text: "Потяг до Києва відправляється о 10:10, до Львова о 11:25, а до Одеси о 09:05. Який потяг відправляється першим?",
+                subQuestions: [
+                    { label: "Коли відправляється потяг до Києва?", answers: ["10:10", "10.10"] },
+                    { label: "Коли відправляється потяг до Львова?", answers: ["11:25", "11.25"] },
+                    { label: "Коли відправляється потяг до Одеси?", answers: ["09:05", "9:05", "09.05", "9.05"] }
+                ],
+                selects: [
+                    { options: ["", "Потяг до Києва", "Потяг до Львова", "Потяг до Одеси"], correct: "Потяг до Одеси" },
+                    { options: ["", "відправляється", "прибуває"], correct: "відправляється" },
+                    { options: ["", "першим.", "останнім."], correct: "першим." }
+                ]
+            },
+            {
+                text: "Анна прийшла на гурток о 14:30, Віка о 13:20, а Катя о 15:45. Хто прийшов на гурток останнім?",
+                subQuestions: [
+                    { label: "Коли прийшла Анна?", answers: ["14:30", "14.30"] },
+                    { label: "Коли прийшла Віка?", answers: ["13:20", "13.20"] },
+                    { label: "Коли прийшла Катя?", answers: ["15:45", "15.45"] }
+                ],
+                selects: [
+                    { options: ["", "Анна", "Віка", "Катя"], correct: "Катя" },
+                    { options: ["", "прийшла на гурток", "пішла з гуртка"], correct: "прийшла на гурток" },
+                    { options: ["", "першою.", "останньою."], correct: "останньою." }
+                ]
+            },
+            {
+                text: "Урок математики почався о 08:30, урок читання о 09:40, а урок малювання о 11:15. Який урок почався першим?",
+                subQuestions: [
+                    { label: "Коли почався урок математики?", answers: ["08:30", "8:30", "08.30", "8.30"] },
+                    { label: "Коли почався урок читання?", answers: ["09:40", "9:40", "09.40", "9.40"] },
+                    { label: "Коли почався урок малювання?", answers: ["11:15", "11.15"] }
+                ],
+                selects: [
+                    { options: ["", "Урок математики", "Урок читання", "Урок малювання"], correct: "Урок математики" },
+                    { options: ["", "почався", "закінчився"], correct: "почався" },
+                    { options: ["", "першим.", "останнім."], correct: "першим." }
+                ]
+            },
+            {
+                text: "Кіт Мурзик заснув о 20:15, собака Барбос о 21:40, а папуга Кеша о 19:00. Хто заснув першим?",
+                subQuestions: [
+                    { label: "Коли заснув кіт Мурзик?", answers: ["20:15", "20.15"] },
+                    { label: "Коли заснув собака Барбос?", answers: ["21:40", "21.40"] },
+                    { label: "Коли заснув папуга Кеша?", answers: ["19:00", "19.00"] }
+                ],
+                selects: [
+                    { options: ["", "Кіт Мурзик", "Собака Барбос", "Папуга Кеша"], correct: "Папуга Кеша" },
+                    { options: ["", "заснув", "прокинувся"], correct: "заснув" },
+                    { options: ["", "першим.", "останнім."], correct: "першим." }
+                ]
+            },
+            {
+                text: "Мама повернулась додому о 18:20, тато о 19:50, а бабуся о 17:10. Хто повернувся додому останнім?",
+                subQuestions: [
+                    { label: "Коли повернулась мама?", answers: ["18:20", "18.20"] },
+                    { label: "Коли повернувся тато?", answers: ["19:50", "19.50"] },
+                    { label: "Коли повернулась бабуся?", answers: ["17:10", "17.10"] }
+                ],
+                selects: [
+                    { options: ["", "Мама", "Тато", "Бабуся"], correct: "Тато" },
+                    { options: ["", "повернувся(-лась) додому", "пішов(-ла) з дому"], correct: "повернувся(-лась) додому" },
+                    { options: ["", "першим.", "останнім."], correct: "останнім." }
+                ]
+            },
+            {
+                text: "Софія з'їла сніданок о 07:45, Настя о 08:55, а Поліна о 06:35. Хто з'їв сніданок першим?",
+                subQuestions: [
+                    { label: "Коли з'їла сніданок Софія?", answers: ["07:45", "7:45", "07.45", "7.45"] },
+                    { label: "Коли з'їла сніданок Настя?", answers: ["08:55", "8:55", "08.55", "8.55"] },
+                    { label: "Коли з'їла сніданок Поліна?", answers: ["06:35", "6:35", "06.35", "6.35"] }
+                ],
+                selects: [
+                    { options: ["", "Софія", "Настя", "Поліна"], correct: "Поліна" },
+                    { options: ["", "з'їла сніданок", "почала сніданок"], correct: "з'їла сніданок" },
+                    { options: ["", "першою.", "останньою."], correct: "першою." }
+                ]
+            }
+        ];
+
+        let currentIndex = 0;
+
+        function loadQuestion() {
+            if (currentIndex >= questions.length) {
+                document.getElementById('quiz-container').innerHTML = `
+                    <div class="text-center py-16">
+                        <h2 class="text-4xl font-bold text-slate-700 mb-4">Чудова робота! 🥳</h2>
+                        <p class="text-slate-500 text-xl">Ви успішно виконали всі 10 задач.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const q = questions[currentIndex];
+            
+            // Оновлення нумерації та тексту
+            document.getElementById('question-counter').innerText = 'Питання ' + (currentIndex + 1) + ' / ' + questions.length;
+            document.getElementById('question-text').innerText = q.text;
+
+            // Генерація інпутів (один блок)
+            const subsContainer = document.getElementById('sub-questions-container');
+            subsContainer.innerHTML = '';
+            q.subQuestions.forEach((sub, i) => {
+                const row = document.createElement('div');
+                row.className = 'flex flex-row items-center justify-between p-3.5 bg-white border border-indigo-100 rounded-xl shadow-sm gap-4';
+                
+                const label = document.createElement('label');
+                label.className = 'text-slate-700 font-medium text-sm md:text-base flex-1';
+                label.innerText = sub.label;
+                
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.id = 'sub-input-' + i;
+                input.className = 'border border-slate-300 rounded-lg px-3 py-2 w-36 focus:outline-none focus:ring-2 focus:ring-indigo-400 font-mono text-center transition-colors';
+                
+                row.appendChild(label);
+                row.appendChild(input);
+                subsContainer.appendChild(row);
+            });
+
+            // Генерація селектів в одну лінію
+            const selectsContainer = document.getElementById('selects-container');
+            selectsContainer.innerHTML = '<span class="text-lg font-bold text-slate-800 mr-2">Відповідь:</span>';
+            q.selects.forEach((sel, i) => {
+                const select = document.createElement('select');
+                select.id = 'select-' + i;
+                select.className = 'border border-slate-300 rounded-xl px-4 py-2.5 bg-slate-50 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-400 font-semibold cursor-pointer transition-colors shadow-sm flex-1 min-w-[150px] appearance-none text-center';
+                
+                sel.options.forEach((optStr, optIndex) => {
+                    const option = document.createElement('option');
+                    option.value = optStr;
+                    option.innerText = optStr;
+                    // Перший варіант (порожній рядок) - прихований і не доступний для вибору після відкриття списку
+                    if (optIndex === 0) {
+                        option.disabled = true;
+                        option.selected = true;
+                        option.hidden = true;
+                    }
+                    select.appendChild(option);
+                });
+                
+                selectsContainer.appendChild(select);
+            });
+
+            // Відновлення кнопок
+            document.getElementById('check-btn').classList.remove('hidden');
+            document.getElementById('next-btn').classList.add('hidden');
+        }
+
+        function checkAnswer() {
+            const q = questions[currentIndex];
+            let allCorrect = true;
+
+            // Перевірка текстових інпутів
+            q.subQuestions.forEach((sub, i) => {
+                const input = document.getElementById('sub-input-' + i);
+                const val = input.value.trim();
+                
+                if (sub.answers.includes(val)) {
+                    input.classList.remove('border-rose-400', 'bg-rose-50', 'border-slate-300');
+                    input.classList.add('border-emerald-400', 'bg-emerald-50', 'text-emerald-800');
+                } else {
+                    input.classList.remove('border-emerald-400', 'bg-emerald-50', 'border-slate-300');
+                    input.classList.add('border-rose-400', 'bg-rose-50', 'text-rose-800');
+                    allCorrect = false;
+                }
+            });
+
+            // Перевірка селектів
+            q.selects.forEach((sel, i) => {
+                const selectEl = document.getElementById('select-' + i);
+                const val = selectEl.value;
+                
+                if (val === sel.correct) {
+                    selectEl.classList.remove('border-rose-400', 'bg-rose-50', 'border-slate-300', 'bg-slate-50', 'text-slate-700');
+                    selectEl.classList.add('border-emerald-400', 'bg-emerald-50', 'text-emerald-800');
+                } else {
+                    selectEl.classList.remove('border-emerald-400', 'bg-emerald-50', 'border-slate-300', 'bg-slate-50', 'text-slate-700');
+                    selectEl.classList.add('border-rose-400', 'bg-rose-50', 'text-rose-800');
+                    allCorrect = false;
+                }
+            });
+
+            if (allCorrect) {
+                document.getElementById('check-btn').classList.add('hidden');
+                document.getElementById('next-btn').classList.remove('hidden');
+            }
+        }
+
+        function nextQuestion() {
+            currentIndex++;
+            loadQuestion();
+        }
+
+        // Запуск
+        loadQuestion();
+    </script>
+</body>
+</html>

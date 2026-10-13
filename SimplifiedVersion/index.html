@@ -1,1 +1,207 @@
 
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Тренажер часу — повзунки</title>
+<link rel="icon" href="data:,">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#eef1f7;--card:#fff;--ink:#1e2433;--mut:#667085;--line:#cfd6e4;--knob:#3b6fe0;--ok:#16a34a;--bad:#dc2626;
+--p0:#e3e8fb;--p1:#fdebd3;--p2:#fff6c7;--p3:#fbdcec;--btn:#1e2433;--btnink:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12151d;--card:#1b2030;--ink:#e8ecf5;--mut:#9aa4b8;--line:#3a4259;--knob:#6b95ff;--p0:#1f2650;--p1:#4a3519;--p2:#4a4519;--p3:#4a1f39;--btn:#e8ecf5;--btnink:#12151d}}
+:root[data-theme="dark"]{--bg:#12151d;--card:#1b2030;--ink:#e8ecf5;--mut:#9aa4b8;--line:#3a4259;--knob:#6b95ff;--p0:#1f2650;--p1:#4a3519;--p2:#4a4519;--p3:#4a1f39;--btn:#e8ecf5;--btnink:#12151d}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;padding:12px;background:var(--bg);color:var(--ink);font-family:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif}
+.game{max-width:920px;margin:0 auto;height:max(700px,calc(100dvh - 24px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)));background:var(--card);border-radius:18px;padding:14px;display:flex;gap:18px;box-shadow:0 2px 14px rgba(20,30,60,.12)}
+.top{display:flex;justify-content:space-between;align-items:baseline;font-weight:800}
+.top span{color:var(--mut);font-weight:700;font-size:14px}
+#task{margin:0;font-size:19px;line-height:1.65;font-weight:700}
+#task b{background:var(--p2);padding:0 5px;border-radius:5px;color:var(--ink)}
+.bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+button{font:inherit;font-weight:800;border:0;border-radius:10px;padding:8px 14px;background:var(--btn);color:var(--btnink);cursor:pointer}
+button:disabled{opacity:.35;cursor:default}
+button:focus-visible,.knob:focus-visible{outline:3px solid var(--knob);outline-offset:2px}
+#msg{font-weight:700;font-size:14px;color:var(--mut)}
+.left{flex:1;min-width:0;display:flex;flex-direction:column;gap:24px;overflow-y:auto;padding:12px 10px 0 26px}
+.board{flex:none;width:362px;display:flex}
+.vsep{flex:none;width:2px;border-radius:1px;background:var(--line)}
+.rail{position:relative;flex:none;width:72px;touch-action:none}
+.rail::after{content:"";position:absolute;right:0;top:0;bottom:0;width:6px;border-radius:3px;background:var(--line)}
+.knob{position:absolute;left:0;top:0;width:46px;display:flex;align-items:center;justify-content:center;border-radius:999px;background:var(--knob);color:#fff;font-weight:800;font-size:12px;cursor:grab;touch-action:none;user-select:none;transition:transform .12s,background-color .2s;box-shadow:0 1px 4px rgba(0,0,0,.3);z-index:2}
+.knob.drag{cursor:grabbing;z-index:3;transition:background-color .2s}
+.knob.ok{background:var(--ok)}
+.knob.bad{background:var(--bad)}
+.table{flex:1;min-width:0;display:grid;grid-template-columns:1fr 78px;grid-template-rows:repeat(27,1fr);border:1px solid var(--line);border-left:0;border-radius:0 10px 10px 0;overflow:hidden}
+.table>div{display:flex;align-items:center;padding:0 10px;font-size:13px;border-top:1px solid rgba(128,138,160,.25);min-height:0;min-width:0}
+.table>.hd{border-top:0;font-weight:800;color:var(--mut);background:var(--card);flex-direction:column;justify-content:center;align-items:flex-start;gap:4px}
+.hd small{font-weight:600;font-size:11px;line-height:1.25}
+.top .stars{display:flex;gap:2px;font-size:24px;line-height:1}
+.top .stars span{color:var(--line);font-size:24px;transition:color .3s}
+.top .stars span.on{color:#f5b700}
+.table>.pc{grid-column:2;justify-content:center;text-align:center;flex-direction:column;gap:2px;font-weight:800;font-size:12px;border-left:1px solid rgba(128,138,160,.35);padding:0 4px}
+.table>.pc span{font-size:20px;line-height:1}
+.table>.hr{grid-column:1;gap:8px}
+.hr b{font-weight:800;min-width:42px}
+.p0{background:var(--p0)}.p1{background:var(--p1)}.p2{background:var(--p2)}.p3{background:var(--p3)}
+.hr.hit{box-shadow:inset 4px 0 0 var(--knob)}
+.hr.ans{outline:2px dashed var(--ok);outline-offset:-2px}
+#ask{margin:0 0 6px;font-size:20px;font-weight:800}
+.answer{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-weight:800}
+select{font:inherit;font-weight:700;padding:7px 8px;border-radius:10px;border:2px solid var(--line);background:var(--card);color:var(--ink);max-width:100%}
+select:disabled{opacity:.7}
+select.okk{border-color:var(--ok)}select.badd{border-color:var(--bad)}
+@media (max-width:760px){.game{flex-direction:column;height:auto}.left{overflow:visible}.board{width:100%;height:760px}.vsep{width:100%;height:2px}}
+@media (prefers-reduced-motion:reduce){.knob{transition:none}}
+@media (max-width:420px){.table{grid-template-columns:1fr 62px}.table>div{padding:0 6px;font-size:12px}.hr b{min-width:38px}}
+</style>
+</head>
+<body>
+<div class="game">
+  <div class="left">
+  <div class="top"><div id="qn"></div><div class="stars" id="stars"></div></div>
+  <p id="task"></p>
+  <p id="ask"></p>
+  <div class="answer"><span>Відповідь:</span><select id="s1"></select><select id="s2"></select><select id="s3"></select></div>
+  <div class="bar"><button id="check">Перевірити</button><button id="next" disabled>Наступне питання</button><span id="msg"></span></div>
+  </div>
+  <div class="vsep"></div>
+  <div class="board"><div class="rail" id="rail"></div><div class="table" id="table"></div></div>
+</div>
+<script>
+const NAMES=["північ","перша ночі","друга ночі","третя ночі","четверта ранку","п'ята ранку","шоста ранку","сьома ранку","восьма ранку","дев'ята ранку","десята ранку","одинадцята ранку","дванадцята дня","перша дня","друга дня","третя дня","четверта дня","п'ята вечора","шоста вечора","сьома вечора","восьма вечора","дев'ята вечора","десята вечора","одинадцята вечора"];
+const PERIODS=[["🌙","ніч",0,4],["🌅","ранок",4,12],["☀️","день",12,17],["🌇","вечір",17,24]];
+// events are listed chronologically; ranges never overlap -> times differ by at least 1 hour
+const SC=[
+["Розклад Оленки:",[["сніданок","m",[7,8]],["прогулянка","f",[11,14]],["вечеря","f",[18,20]]]],
+["Школа Івана:",[["урок","m",[8,9]],["обід","m",[12,13]],["гурток","m",[15,17]]]],
+["У дитячому таборі:",[["зарядка","f",[7,8]],["купання","n",[11,14]],["дискотека","f",[19,21]]]],
+["Вихідний день родини:",[["кіно","n",[10,12]],["обід","m",[13,14]],["прогулянка","f",[16,19]]]],
+["Подорож потягом:",[["відправлення","n",[1,5]],["обід","m",[11,14]],["прибуття","n",[17,22]]]],
+["Розклад тата:",[["робота","f",[8,9]],["футбол","m",[18,19]],["казка","f",[20,22]]]],
+["На фермі:",[["годування","n",[6,7]],["полуденок","m",[14,16]],["вечеря","f",[18,20]]]],
+["У лікарні:",[["обхід","m",[8,9]],["обід","m",[12,14]],["відвідування","n",[16,18]]]],
+["Вечір у бабусі:",[["чаювання","n",[15,16]],["вечеря","f",[18,19]],["казка","f",[21,22]]]],
+["Екскурсія:",[["збір","m",[8,9]],["пікнік","m",[12,14]],["повернення","n",[18,20]]]]
+];
+const VERB={m:"був",f:"була",n:"було"};
+const $=id=>document.getElementById(id);
+const rail=$("rail"),table=$("table"),KW=46,GAP=4,N=SC.length,sel=[$("s1"),$("s2"),$("s3")];
+let q=0,score=0,knobs=[],locked=false,drag=null,rowH=0,rows=[],ans=null;
+const pad=h=>String(h).padStart(2,"0")+":00";
+const per=h=>PERIODS.findIndex(p=>h>=p[2]&&h<p[3]);
+const shuffle=a=>[...a].sort(()=>Math.random()-.5);
+
+// table: 2 columns; column 2 has just 4 cells (ніч, ранок, день, вечір); fills the whole board height
+table.innerHTML='<div class="hd" style="grid-area:1/1/4/2"><b>Година</b><small>Перетягни повзунки вниз на потрібні години</small></div><div class="hd" style="grid-area:1/2/4/3;align-items:center;text-align:center">Пора доби</div>';
+for(let h=0;h<24;h++){
+  const r=document.createElement("div");r.className="hr p"+per(h);r.style.gridRow=h+4;
+  r.innerHTML=`<b>${pad(h)}</b><span>${NAMES[h]}</span>`;
+  table.appendChild(r);rows.push(r);
+}
+PERIODS.forEach(([e,n,a,b],i)=>{
+  const c=document.createElement("div");c.className="pc p"+i;c.style.gridRow=`${a+4} / ${b+4}`;
+  c.innerHTML=`<span>${e}</span>${n}`;table.appendChild(c);
+});
+
+function pos(k){
+  const x=rail.clientWidth-KW-10;
+  const y=(k.idx===0?k.lane:k.idx+2)*rowH+2; // parked knobs sit one under another above the hours
+  k.el.style.transform=`translate(${x}px,${y}px)`;
+  k.el.style.height=(rowH-4)+"px";
+  k.el.style.fontSize=Math.max(9,Math.min(13,rowH-9))+"px";
+}
+function measure(){rowH=rail.clientHeight/27;knobs.forEach(pos)}
+new ResizeObserver(measure).observe(rail);
+
+function refresh(){
+  rows.forEach(r=>r.classList.remove("hit"));
+  knobs.forEach(k=>{
+    k.el.classList.toggle("ok",k.idx>0&&k.idx-1===k.h);
+    if(k.idx>0)rows[k.idx-1].classList.add("hit");
+  });
+}
+function stars(){$("stars").innerHTML=Array.from({length:N},(_,i)=>`<span class="${i<score?"on":""}">★</span>`).join("");$("stars").setAttribute("aria-label",`Зірок: ${score} з ${N}`)}
+function fill(el,opts){el.innerHTML='<option value="">…</option>'+opts.map(o=>`<option>${o}</option>`).join("");el.disabled=false;el.className=""}
+
+function build(){
+  rail.innerHTML="";rows.forEach(r=>r.classList.remove("hit","ans"));
+  locked=false;$("msg").textContent="";
+  $("check").disabled=false;$("next").disabled=true;$("next").textContent="Наступне питання";
+  const [intro,evs]=SC[q];
+  const items=evs.map(([n,g,[a,b]])=>({n,g,h:a+Math.floor(Math.random()*(b-a+1))}));
+  const sorted=[...items].sort((x,y)=>x.h-y.h);
+  const mode=Math.random()<.5?"first":"last";
+  ans={mode,item:mode==="first"?sorted[0]:sorted[2]};
+  const shown=shuffle(items);
+  $("task").innerHTML=intro+"<br>"+shown.map(e=>`${e.n} о <b>${pad(e.h)}</b>`).join(",<br>")+".";
+  $("ask").textContent=mode==="first"?"Що було першим?":"Що було останнім?";
+  fill(sel[0],["Першим","Потім","Останнім"]);
+  fill(sel[1],["був","була","було"]);
+  fill(sel[2],shuffle(items.map(e=>e.n)));
+  $("qn").textContent=`Питання ${q+1} / ${N}`;stars();
+  const lanes=shuffle([0,1,2]);
+  knobs=shown.map((it,i)=>{
+    const el=document.createElement("div");el.className="knob";el.tabIndex=0;el.textContent=pad(it.h);
+    rail.appendChild(el);
+    const k={h:it.h,idx:0,lane:lanes[i],el};
+    el.addEventListener("pointerdown",e=>{if(locked)return;el.setPointerCapture(e.pointerId);drag=k;el.classList.add("drag")});
+    el.addEventListener("pointermove",e=>{
+      if(drag!==k)return;
+      const y=e.clientY-rail.getBoundingClientRect().top;
+      const r=Math.max(0,Math.min(26,Math.floor(y/rowH)));move(k,r<3?0:r-2);
+    });
+    const up=()=>{drag=null;el.classList.remove("drag")};
+    el.addEventListener("pointerup",up);el.addEventListener("pointercancel",up);
+    el.addEventListener("keydown",e=>{
+      if(locked)return;
+      const d=e.key==="ArrowDown"?1:e.key==="ArrowUp"?-1:0;
+      if(d){e.preventDefault();move(k,Math.max(0,Math.min(24,k.idx+d)))}
+    });
+    return k;
+  });
+  measure();refresh();
+}
+function move(k,i){
+  if(i===k.idx)return;
+  if(i>0&&knobs.some(o=>o!==k&&o.idx===i))return; // knobs never hide each other
+  k.idx=i;pos(k);refresh();
+}
+
+$("check").onclick=()=>{
+  if(locked)return;
+  const v=sel.map(s=>s.value);
+  if(v.some(x=>!x)){$("msg").textContent="Склади відповідь із трьох частин.";return}
+  locked=true;
+  const want=[ans.mode==="first"?"Першим":"Останнім",VERB[ans.item.g],ans.item.n];
+  sel.forEach((s,i)=>{s.disabled=true;s.className=v[i]===want[i]?"okk":"badd"});
+  const good=v.every((x,i)=>x===want[i]);
+  if(good){score=Math.min(N,score+1);$("msg").textContent="Правильно! 🎉"}
+  else{
+    score=Math.max(0,score-1);
+    $("msg").textContent=`Правильна відповідь: ${want.join(" ")}.`;
+    knobs.forEach(k=>{if(!(k.idx>0&&k.idx-1===k.h)){k.el.classList.add("bad");rows[k.h].classList.add("ans")}});
+  }
+  stars();
+  $("check").disabled=true;$("next").disabled=false;
+  if(q===N-1)$("next").textContent="Завершити";
+};
+$("next").onclick=()=>{
+  const t=$("next").textContent;
+  if(t==="Завершити"){
+    $("task").textContent=`Гру завершено! Твій результат: ${score} з ${N}.`;
+    $("qn").textContent="Готово";$("msg").textContent="";$("ask").textContent="";
+    rail.innerHTML="";knobs=[];rows.forEach(r=>r.classList.remove("hit","ans"));
+    sel.forEach(s=>{s.disabled=true});
+    $("next").textContent="Грати знову";$("check").disabled=true;return;
+  }
+  if(t==="Грати знову"){q=0;score=0;build();return}
+  q++;build();
+};
+build();
+</script>
+</body>
+</html>

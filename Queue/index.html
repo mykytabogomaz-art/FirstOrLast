@@ -1,1 +1,557 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Черга по порядку</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&family=Rubik+Mono+One&display=swap">
+<style>
+  /* Layout: one column. Progress ties, question, a street stage (ice-cream kiosk + queue of 4 boys on a pavement), answer buttons, feedback. */
+  :root {
+    --bg: #ECEFEA;
+    --surface: #FFFFFF;
+    --ink: #1B2A2A;
+    --muted: #56655F;
+    --line: #CBD5CE;
+    --accent: #0B5CAD;
+    --accent-ink: #FFFFFF;
+    --accent-soft: #D9E8F7;
+    --ok: #1B7A4B;
+    --ok-soft: #DCF1E5;
+    --bad: #B83225;
+    --bad-soft: #F9E1DD;
+    --c-red: #D6453D;
+    --c-blue: #2F6FCB;
+    --c-yellow: #E6B01E;
+    --c-green: #2E9A5B;
+    --kiosk: #3F5A57;
+    --pants: #34495A;
+    --win: rgba(255, 255, 255, 0.88);
+    --ground: #56655F;
+    --tile: #A9B8B0;
+    --font-display: 'Rubik Mono One', 'Rubik', system-ui, sans-serif;
+    --font-ui: 'Rubik', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #101A19;
+      --surface: #182523;
+      --ink: #E8F0EC;
+      --muted: #A0B3AB;
+      --line: #2B3E3A;
+      --accent: #6DB2F2;
+      --accent-ink: #0A1A25;
+      --accent-soft: #1E3A52;
+      --ok: #5FD08F;
+      --ok-soft: #17382A;
+      --bad: #FF8D7E;
+      --bad-soft: #43211D;
+      --kiosk: #6A8C87;
+      --pants: #6F8CA3;
+      --ground: #86998F;
+      --tile: #3A504A;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #101A19;
+    --surface: #182523;
+    --ink: #E8F0EC;
+    --muted: #A0B3AB;
+    --line: #2B3E3A;
+    --accent: #6DB2F2;
+    --accent-ink: #0A1A25;
+    --accent-soft: #1E3A52;
+    --ok: #5FD08F;
+    --ok-soft: #17382A;
+    --bad: #FF8D7E;
+    --bad-soft: #43211D;
+    --kiosk: #6A8C87;
+    --pants: #6F8CA3;
+    --ground: #86998F;
+    --tile: #3A504A;
+    color-scheme: dark;
+  }
 
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 400 16px/1.5 var(--font-ui);
+    padding-block: 20px 32px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .app { max-width: 44rem; margin: 0 auto; display: grid; gap: 20px; }
+  .app > *, #game > * { min-width: 0; }
+
+  .top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  h1 {
+    margin: 0;
+    font: 400 clamp(1.1rem, 5vw, 1.6rem)/1.2 var(--font-display);
+    text-wrap: balance;
+  }
+  .score { margin: 0; font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .score b { color: var(--ink); font-weight: 600; }
+
+  #game { display: grid; gap: 16px; }
+
+  .prog { display: grid; gap: 8px; }
+  .count { margin: 0; font-size: 0.85rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+  .ties { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; }
+  .tie { height: 8px; border-radius: 2px; background: var(--line); }
+  .tie.cur { background: var(--accent); }
+  .tie.ok { background: var(--ok); }
+  .tie.bad { background: var(--bad); }
+
+  #prompt {
+    margin: 0;
+    font-size: clamp(1.25rem, 4.2vw, 1.65rem);
+    font-weight: 500;
+    line-height: 1.3;
+    min-height: 2.6em;
+    text-wrap: balance;
+    outline: none;
+  }
+  #prompt b { font-weight: 700; color: var(--accent); }
+
+  .stage {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px 12px 12px;
+  }
+  .queue {
+    display: grid;
+    grid-template-columns: 1.8fr repeat(4, 1fr);
+    gap: 6px;
+    align-items: end;
+  }
+  .cell { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .cap {
+    min-height: 1.35em;
+    font-size: 0.75rem;
+    line-height: 1.35;
+    text-align: center;
+    color: var(--muted);
+    overflow-wrap: anywhere;
+  }
+  .person, .kiosk {
+    display: block;
+    appearance: none;
+    border: 0;
+    background: none;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    color: inherit;
+    border-radius: 10px;
+    position: relative;
+  }
+  button.person { cursor: pointer; }
+  .person svg, .kiosk svg { display: block; width: 100%; height: auto; overflow: visible; transition: transform 0.15s ease; }
+  button.person:hover:not(:disabled) svg { transform: translateY(-3px); }
+  button.person:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+  button.person:disabled { cursor: default; }
+
+  .person.lit { outline: 3px solid var(--accent); outline-offset: 3px; animation: glow 1.4s ease-in-out infinite; }
+  @keyframes glow {
+    0%, 100% { box-shadow: 0 0 0 0 transparent; }
+    50% { box-shadow: 0 0 0 8px var(--accent-soft); }
+  }
+
+  .sh-red { fill: var(--c-red); }
+  .sh-blue { fill: var(--c-blue); }
+  .sh-yellow { fill: var(--c-yellow); }
+  .sh-green { fill: var(--c-green); }
+  .pants { fill: var(--pants); }
+  .shoe { fill: var(--ink); }
+  .mouth { fill: none; stroke: #7A3E2A; stroke-width: 1.6; stroke-linecap: round; }
+  .eye { fill: #1D1A1A; }
+  .awning { fill: var(--c-red); }
+  .stripe { fill: var(--win); }
+  .kiosk-body { fill: var(--kiosk); }
+  .counter { fill: var(--c-yellow); }
+  .win { fill: var(--win); }
+  .scoop { fill: var(--c-red); }
+  .cone { fill: var(--c-yellow); }
+  .mark { display: none; }
+  .person.right .mark-ok { display: block; }
+  .person.wrong .mark-bad { display: block; }
+  .mark-ok circle { fill: var(--ok); }
+  .mark-bad circle { fill: var(--bad); }
+  .mark path { fill: none; stroke: #fff; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+  .person.right { outline: 3px solid var(--ok); outline-offset: 3px; animation: none; }
+  .person.wrong { outline: 3px solid var(--bad); outline-offset: 3px; }
+
+  .ground {
+    height: 8px;
+    margin-top: -2px;
+    background:
+      linear-gradient(var(--ground), var(--ground)) top / 100% 3px no-repeat,
+      repeating-linear-gradient(90deg, var(--tile) 0 28px, transparent 28px 32px) bottom / 100% 4px no-repeat;
+  }
+  .hint { margin: 12px 0 0; text-align: center; font-size: 0.85rem; color: var(--muted); }
+
+  .answers { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .ans {
+    position: relative;
+    min-height: 58px;
+    padding: 10px 8px;
+    border-radius: 12px;
+    border: 2px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    font: 600 clamp(1rem, 3.6vw, 1.15rem)/1.2 var(--font-ui);
+    cursor: pointer;
+    transition: border-color 0.12s ease, background-color 0.12s ease;
+  }
+  .ans:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-soft); }
+  .ans:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .ans:disabled { cursor: default; color: var(--ink); }
+  .ans.dim { opacity: 0.55; }
+  .ans.right { border-color: var(--ok); background: var(--ok-soft); }
+  .ans.wrong { border-color: var(--bad); background: var(--bad-soft); }
+  .ans .k {
+    position: absolute;
+    top: 4px;
+    left: 8px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--muted);
+  }
+  @media (hover: none) { .ans .k { display: none; } }
+
+  .foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; min-height: 50px; }
+  .fb { margin: 0; flex: 1 1 14rem; font-weight: 500; font-size: 1.05rem; }
+  .fb.ok { color: var(--ok); }
+  .fb.bad { color: var(--bad); }
+  .next {
+    appearance: none;
+    border: 0;
+    border-radius: 12px;
+    padding: 13px 26px;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font: 600 1rem var(--font-ui);
+    cursor: pointer;
+  }
+  .next:hover { filter: brightness(1.08); }
+  .next:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+
+  #result { outline: none; }
+  .res {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 24px 20px;
+    display: grid;
+    gap: 16px;
+    justify-items: start;
+  }
+  .res .eyebrow { margin: 0; font-size: 0.85rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+  .res .big { margin: 0; font: 400 clamp(2.2rem, 10vw, 3.4rem)/1.1 var(--font-display); font-variant-numeric: tabular-nums; }
+  .res .msg { margin: 0; font-size: 1.1rem; max-width: 34rem; text-wrap: pretty; }
+  .brk { list-style: none; margin: 0; padding: 0; width: 100%; display: grid; gap: 10px; }
+  .brk li { display: grid; grid-template-columns: 6.5rem 1fr 4rem; gap: 12px; align-items: center; }
+  .brk .w { font-weight: 600; }
+  .brk .bar { height: 10px; border-radius: 5px; background: var(--line); overflow: hidden; }
+  .brk .bar i { display: block; height: 100%; background: var(--ok); }
+  .brk .bar i.part { background: var(--accent); }
+  .brk .n { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  @media (max-width: 480px) {
+    .queue { gap: 4px; }
+    .stage { padding: 12px 8px 10px; }
+    .cap { font-size: 0.68rem; }
+    .answers { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .person.lit { animation: none; }
+    .person svg, .kiosk svg, .ans { transition: none; }
+  }
+</style>
+
+<main class="app" id="app">
+  <header class="top">
+    <h1>Черга по порядку</h1>
+    <p class="score" id="score" aria-live="off"></p>
+  </header>
+
+  <section id="game">
+    <div class="prog">
+      <p class="count" id="count"></p>
+      <div class="ties" id="ties"></div>
+    </div>
+
+    <h2 id="prompt" tabindex="-1"></h2>
+
+    <div class="stage">
+      <div class="queue" id="queue"></div>
+      <div class="ground"></div>
+      <p class="hint">Рахуємо зліва направо, від кіоска з морозивом.</p>
+    </div>
+
+    <div class="answers" id="answers" hidden></div>
+
+    <div class="foot">
+      <p class="fb" id="fb" role="status" aria-live="polite"></p>
+      <button type="button" class="next" id="next" hidden>Далі</button>
+    </div>
+  </section>
+
+  <section id="result" tabindex="-1" hidden></section>
+</main>
+
+<script>
+(function () {
+  var WORDS = ['перший', 'другий', 'третій', 'останній'];
+  var PEOPLE = [
+    { n: 'Тарас', shirt: 'red', hair: '#3A2A1E', skin: '#E6B48C' },
+    { n: 'Олег', shirt: 'blue', hair: '#D8A93B', skin: '#F1C9A5' },
+    { n: 'Іван', shirt: 'yellow', hair: '#1D1A1A', skin: '#C98F64' },
+    { n: 'Назар', shirt: 'green', hair: '#7A4A2A', skin: '#EDBF98' }
+  ];
+  var TOTAL = 10;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var elScore = $('score'), elCount = $('count'), elTies = $('ties'), elPrompt = $('prompt');
+  var elQueue = $('queue'), elAnswers = $('answers'), elFb = $('fb'), elNext = $('next');
+  var elGame = $('game'), elResult = $('result');
+
+  var st = null;
+
+  function shuffle(a) {
+    a = a.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  function makeQuestions() {
+    var targets, ok, tries = 0;
+    do {
+      targets = shuffle([0, 1, 2, 3, 0, 1, 2, 3, Math.floor(Math.random() * 4), Math.floor(Math.random() * 4)]);
+      ok = true;
+      for (var i = 1; i < targets.length; i++) {
+        if (targets[i] === targets[i - 1]) { ok = false; break; }
+      }
+      tries++;
+    } while (!ok && tries < 300);
+    var types = shuffle(['find', 'find', 'find', 'find', 'name', 'name', 'name', 'who', 'who', 'who']);
+    return targets.map(function (t, i) {
+      var perm = shuffle(PEOPLE);
+      return { type: types[i], target: t, perm: perm, who: perm[t] };
+    });
+  }
+
+  function personSvg(p) {
+    return '<svg viewBox="0 0 60 100" aria-hidden="true" focusable="false">' +
+      '<rect class="pants" x="19" y="62" width="9" height="31" rx="3"/>' +
+      '<rect class="pants" x="32" y="62" width="9" height="31" rx="3"/>' +
+      '<rect class="shoe" x="13" y="90" width="16" height="7" rx="3.5"/>' +
+      '<rect class="shoe" x="27" y="90" width="16" height="7" rx="3.5"/>' +
+      '<rect class="sh-' + p.shirt + '" x="9" y="34" width="8" height="26" rx="4"/>' +
+      '<rect class="sh-' + p.shirt + '" x="43" y="34" width="8" height="26" rx="4"/>' +
+      '<circle cx="13" cy="62" r="4" style="fill:' + p.skin + '"/>' +
+      '<circle cx="47" cy="62" r="4" style="fill:' + p.skin + '"/>' +
+      '<rect class="sh-' + p.shirt + '" x="14" y="30" width="32" height="36" rx="11"/>' +
+      '<rect x="26" y="26" width="8" height="8" rx="2" style="fill:' + p.skin + '"/>' +
+      '<circle cx="30" cy="17" r="12" style="fill:' + p.skin + '"/>' +
+      '<path d="M18 16 A12 12 0 0 1 42 16 Q36 9 30 11 Q24 9 18 16 Z" style="fill:' + p.hair + '"/>' +
+      '<circle class="eye" cx="24.5" cy="18" r="1.6"/><circle class="eye" cx="33" cy="18" r="1.6"/>' +
+      '<path class="mouth" d="M24 23 Q28.5 26.5 33 23"/>' +
+      '<g class="mark mark-ok"><circle cx="30" cy="48" r="14"/><path d="M23 48 L28.5 53.5 L38 42.5"/></g>' +
+      '<g class="mark mark-bad"><circle cx="30" cy="48" r="14"/><path d="M24 42 L36 54 M36 42 L24 54"/></g>' +
+      '</svg>';
+  }
+
+  var KIOSK_SVG =
+    '<svg viewBox="0 0 120 110" aria-hidden="true" focusable="false">' +
+    '<rect class="kiosk-body" x="10" y="24" width="100" height="82" rx="4"/>' +
+    '<rect class="awning" x="4" y="6" width="112" height="20" rx="4"/>' +
+    '<rect class="stripe" x="18" y="6" width="14" height="20"/>' +
+    '<rect class="stripe" x="46" y="6" width="14" height="20"/>' +
+    '<rect class="stripe" x="74" y="6" width="14" height="20"/>' +
+    '<rect class="stripe" x="102" y="6" width="14" height="20" rx="0"/>' +
+    '<rect class="win" x="22" y="36" width="76" height="30" rx="3"/>' +
+    '<path class="cone" d="M53 50 L67 50 L60 64 Z"/>' +
+    '<circle class="scoop" cx="60" cy="45" r="7.5"/>' +
+    '<rect class="counter" x="14" y="66" width="92" height="8" rx="2"/>' +
+    '</svg>';
+
+  function newGame() {
+    st = { qs: makeQuestions(), i: 0, score: 0, results: [], done: false };
+    elResult.hidden = true;
+    elGame.hidden = false;
+    renderGame();
+  }
+
+  function renderTies() {
+    var h = '';
+    for (var i = 0; i < TOTAL; i++) {
+      var c = 'tie';
+      if (i < st.results.length) c += st.results[i].ok ? ' ok' : ' bad';
+      else if (i === st.i) c += ' cur';
+      h += '<span class="' + c + '"></span>';
+    }
+    elTies.innerHTML = h;
+    elTies.setAttribute('role', 'img');
+    elTies.setAttribute('aria-label', 'Питання ' + (st.i + 1) + ' з ' + TOTAL);
+  }
+
+  function renderScore() {
+    elScore.innerHTML = 'Правильно: <b>' + st.score + '</b>';
+  }
+
+  function renderGame() {
+    var q = st.qs[st.i];
+    elCount.textContent = 'Питання ' + (st.i + 1) + ' з ' + TOTAL;
+    renderScore();
+    renderTies();
+
+    if (q.type === 'find') {
+      elPrompt.innerHTML = 'Хто стоїть у черзі <b>' + WORDS[q.target] + '</b>? Натисни на нього.';
+    } else if (q.type === 'name') {
+      elPrompt.innerHTML = '<b>Підсвічений</b> хлопчик стоїть у черзі…';
+    } else {
+      elPrompt.innerHTML = '<b>' + q.who.n + '</b> стоїть у черзі…';
+    }
+
+    var h = '<div class="cell"><div class="cap">кіоск</div><div class="kiosk" role="img" aria-label="Кіоск з морозивом">' + KIOSK_SVG + '</div></div>';
+    for (var i = 0; i < 4; i++) {
+      var p = q.perm[i];
+      var capText = q.type === 'who' ? p.n : '';
+      h += '<div class="cell"><div class="cap">' + capText + '</div>';
+      if (q.type === 'find') {
+        h += '<button type="button" class="person" data-i="' + i + '" aria-label="' + p.n + '">' + personSvg(p) + '</button>';
+      } else {
+        var lit = q.type === 'name' && i === q.target;
+        h += '<div class="person' + (lit ? ' lit' : '') + '" role="img" aria-label="' + (lit ? 'Підсвічений хлопчик' : p.n) + '">' + personSvg(p) + '</div>';
+      }
+      h += '</div>';
+    }
+    elQueue.innerHTML = h;
+
+    if (q.type === 'find') {
+      elAnswers.hidden = true;
+      elAnswers.innerHTML = '';
+    } else {
+      elAnswers.hidden = false;
+      elAnswers.innerHTML = WORDS.map(function (w, i) {
+        return '<button type="button" class="ans" data-i="' + i + '"><span class="k">' + (i + 1) + '</span>' + w + '</button>';
+      }).join('');
+    }
+
+    elFb.textContent = '';
+    elFb.className = 'fb';
+    elNext.hidden = true;
+    st.done = false;
+  }
+
+  function capFirst(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+  function answer(idx) {
+    if (!st || st.done) return;
+    var q = st.qs[st.i];
+    var right = idx === q.target;
+    var word = WORDS[q.target];
+    var who = q.who.n;
+    st.done = true;
+    if (right) st.score++;
+    st.results.push({ target: q.target, ok: right });
+
+    var people = elQueue.querySelectorAll('.person');
+    if (q.type === 'find') {
+      Array.prototype.forEach.call(people, function (w, i) {
+        w.disabled = true;
+        if (i === q.target) w.classList.add('right');
+        else if (i === idx) w.classList.add('wrong');
+      });
+      elFb.textContent = right
+        ? 'Правильно! ' + who + ' стоїть у черзі ' + word + '.'
+        : 'Не зовсім. ' + capFirst(word) + ' — це ' + who + ', він позначений.';
+    } else {
+      Array.prototype.forEach.call(elAnswers.querySelectorAll('.ans'), function (b, i) {
+        b.disabled = true;
+        if (i === q.target) b.classList.add('right');
+        else if (i === idx) b.classList.add('wrong');
+        else b.classList.add('dim');
+      });
+      people[q.target].classList.remove('lit');
+      people[q.target].classList.add('right');
+      elFb.textContent = (right ? 'Правильно! ' : 'Не зовсім. ') + who + ' стоїть у черзі ' + word + '.';
+    }
+    elFb.className = 'fb ' + (right ? 'ok' : 'bad');
+    renderScore();
+    renderTies();
+    elNext.textContent = st.i === TOTAL - 1 ? 'Результат' : 'Далі';
+    elNext.hidden = false;
+    elNext.focus();
+  }
+
+  function showResult() {
+    var per = [0, 1, 2, 3].map(function () { return { t: 0, c: 0 }; });
+    st.results.forEach(function (r) {
+      per[r.target].t++;
+      if (r.ok) per[r.target].c++;
+    });
+    var msg;
+    if (st.score === TOTAL) msg = 'Усі відповіді правильні. Ти знаєш, хто за ким стоїть у черзі.';
+    else if (st.score >= 8) msg = 'Дуже добре. Потренуй ще слова, де були помилки.';
+    else if (st.score >= 5) msg = 'Непогано. Пройди тренажер ще раз, щоб закріпити слова.';
+    else msg = 'Потрібно ще потренуватися. Пройди тренажер ще раз і рахуй від кіоска.';
+
+    var rows = per.map(function (p, i) {
+      var pct = p.t ? Math.round(p.c / p.t * 100) : 0;
+      return '<li><span class="w">' + WORDS[i] + '</span>' +
+        '<span class="bar"><i class="' + (p.c === p.t ? '' : 'part') + '" style="width:' + pct + '%"></i></span>' +
+        '<span class="n">' + p.c + ' з ' + p.t + '</span></li>';
+    }).join('');
+
+    elResult.innerHTML =
+      '<div class="res">' +
+      '<p class="eyebrow">Твій результат</p>' +
+      '<p class="big">' + st.score + ' з ' + TOTAL + '</p>' +
+      '<p class="msg">' + msg + '</p>' +
+      '<ul class="brk">' + rows + '</ul>' +
+      '<button type="button" class="next" id="again">Пройти ще раз</button>' +
+      '</div>';
+    elGame.hidden = true;
+    elResult.hidden = false;
+    renderScore();
+    elResult.focus();
+  }
+
+  elQueue.addEventListener('click', function (e) {
+    var b = e.target.closest('button.person');
+    if (b) answer(parseInt(b.getAttribute('data-i'), 10));
+  });
+  elAnswers.addEventListener('click', function (e) {
+    var b = e.target.closest('button.ans');
+    if (b) answer(parseInt(b.getAttribute('data-i'), 10));
+  });
+  elNext.addEventListener('click', function () {
+    st.i++;
+    if (st.i >= TOTAL) { showResult(); return; }
+    renderGame();
+    elPrompt.focus();
+  });
+  elResult.addEventListener('click', function (e) {
+    if (e.target.closest('#again')) newGame();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (!st || st.done || elGame.hidden) return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var q = st.qs[st.i];
+    if (q.type === 'find') return;
+    var n = parseInt(e.key, 10);
+    if (n >= 1 && n <= 4) answer(n - 1);
+  });
+
+  newGame();
+})();
+</script>
+
+</body></html>

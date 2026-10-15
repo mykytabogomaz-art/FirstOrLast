@@ -1,1 +1,500 @@
 
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Перший, другий, останній</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&family=Rubik+Mono+One&display=swap">
+<style>
+  /* Layout: one column. Progress ties, task line, a squared-notebook stage (3-5 objects in a row, an input under each), word hint, check/next button. */
+  :root {
+    --bg: #E8EEF6;
+    --surface: #FFFFFF;
+    --ink: #16233B;
+    --muted: #55657F;
+    --line: #C3D1E6;
+    --grid: #DCE8F6;
+    --pen: #1B3FA6;
+    --accent: #2347B8;
+    --accent-ink: #FFFFFF;
+    --accent-soft: #DDE6FA;
+    --ok: #1B7A4B;
+    --ok-soft: #DCF1E5;
+    --bad: #B83225;
+    --bad-soft: #F9E1DD;
+    --font-display: 'Rubik Mono One', 'Rubik', system-ui, sans-serif;
+    --font-ui: 'Rubik', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0E1626;
+      --surface: #162238;
+      --ink: #E6ECF7;
+      --muted: #9DAECB;
+      --line: #2B3C59;
+      --grid: #1E2E4A;
+      --pen: #9DB9FF;
+      --accent: #7FA0FF;
+      --accent-ink: #0B1530;
+      --accent-soft: #22345C;
+      --ok: #5FD08F;
+      --ok-soft: #17382A;
+      --bad: #FF8D7E;
+      --bad-soft: #43211D;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0E1626;
+    --surface: #162238;
+    --ink: #E6ECF7;
+    --muted: #9DAECB;
+    --line: #2B3C59;
+    --grid: #1E2E4A;
+    --pen: #9DB9FF;
+    --accent: #7FA0FF;
+    --accent-ink: #0B1530;
+    --accent-soft: #22345C;
+    --ok: #5FD08F;
+    --ok-soft: #17382A;
+    --bad: #FF8D7E;
+    --bad-soft: #43211D;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 400 16px/1.5 var(--font-ui);
+    padding-block: 20px 32px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .app { max-width: 46rem; margin: 0 auto; display: grid; gap: 20px; }
+  .app > *, #game > * { min-width: 0; }
+
+  .top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  h1 {
+    margin: 0;
+    font: 400 clamp(1.1rem, 5vw, 1.6rem)/1.2 var(--font-display);
+    text-wrap: balance;
+  }
+  .score { margin: 0; font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .score b { color: var(--ink); font-weight: 600; }
+
+  #game { display: grid; gap: 16px; }
+
+  .prog { display: grid; gap: 8px; }
+  .count { margin: 0; font-size: 0.85rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+  .ties { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; }
+  .tie { height: 8px; border-radius: 2px; background: var(--line); }
+  .tie.cur { background: var(--accent); }
+  .tie.ok { background: var(--ok); }
+  .tie.bad { background: var(--bad); }
+
+  #prompt {
+    margin: 0;
+    font-size: clamp(1.25rem, 4.2vw, 1.65rem);
+    font-weight: 500;
+    line-height: 1.3;
+    text-wrap: balance;
+    outline: none;
+  }
+  #prompt b { font-weight: 700; color: var(--accent); }
+
+  .stage {
+    background-color: var(--surface);
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 22px 22px;
+    background-position: -1px -1px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px 12px 14px;
+  }
+  .rowwrap { overflow-x: auto; padding-bottom: 4px; }
+  .row {
+    display: grid;
+    grid-template-columns: repeat(var(--n, 4), minmax(5.4rem, 9rem));
+    gap: 8px;
+    justify-content: center;
+    width: 100%;
+    min-width: min-content;
+  }
+  .cell { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .obj {
+    font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+    font-size: clamp(2.6rem, 10vw, 3.8rem);
+    line-height: 1;
+    text-align: center;
+    padding: 6px 0;
+    user-select: none;
+  }
+  .in {
+    width: 100%;
+    min-width: 0;
+    height: 50px;
+    padding: 0 6px;
+    border: 2px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--pen);
+    font: 500 1rem var(--font-ui);
+    text-align: center;
+  }
+  .in:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+  .in.ok { border-color: var(--ok); background: var(--ok-soft); }
+  .in.bad { border-color: var(--bad); background: var(--bad-soft); }
+  .fbk { min-height: 1.5em; font-size: 0.82rem; font-weight: 500; text-align: center; line-height: 1.5; overflow-wrap: anywhere; }
+  .fbk .y { color: var(--ok); font-size: 1rem; }
+  .fbk .x { color: var(--bad); }
+
+  .hint { margin: 10px 0 0; text-align: center; font-size: 0.85rem; color: var(--muted); }
+  .scrollhint { margin: 6px 0 0; text-align: center; font-size: 0.85rem; color: var(--accent); font-weight: 500; }
+
+  .tip summary { cursor: pointer; color: var(--accent); font-weight: 500; width: fit-content; border-radius: 6px; }
+  .tip summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; padding: 0; list-style: none; }
+  .chips li {
+    padding: 4px 14px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--pen);
+    font-weight: 500;
+  }
+
+  .foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; min-height: 50px; }
+  .fb { margin: 0; flex: 1 1 14rem; font-weight: 500; font-size: 1.05rem; text-wrap: pretty; }
+  .fb.ok { color: var(--ok); }
+  .fb.bad { color: var(--bad); }
+  .act {
+    appearance: none;
+    border: 0;
+    border-radius: 12px;
+    padding: 13px 26px;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font: 600 1rem var(--font-ui);
+    cursor: pointer;
+  }
+  .act:hover { filter: brightness(1.08); }
+  .act:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+
+  #result { outline: none; }
+  .res {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 24px 20px;
+    display: grid;
+    gap: 16px;
+    justify-items: start;
+  }
+  .res .eyebrow { margin: 0; font-size: 0.85rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+  .res .big { margin: 0; font: 400 clamp(2.2rem, 10vw, 3.4rem)/1.1 var(--font-display); font-variant-numeric: tabular-nums; }
+  .res .words { margin: 0; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .res .msg { margin: 0; font-size: 1.1rem; max-width: 34rem; text-wrap: pretty; }
+  .brk { list-style: none; margin: 0; padding: 0; width: 100%; display: grid; gap: 10px; }
+  .brk li { display: grid; grid-template-columns: 7rem 1fr 4rem; gap: 12px; align-items: center; }
+  .brk .w { font-weight: 600; }
+  .brk .bar { height: 10px; border-radius: 5px; background: var(--line); overflow: hidden; }
+  .brk .bar i { display: block; height: 100%; background: var(--ok); }
+  .brk .bar i.part { background: var(--accent); }
+  .brk .n { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  @media (max-width: 480px) {
+    .stage { padding: 14px 8px 12px; }
+    .brk li { grid-template-columns: 6rem 1fr 3.5rem; gap: 8px; }
+  }
+</style>
+
+<main class="app" id="app">
+  <header class="top">
+    <h1>Перший, другий, останній</h1>
+    <p class="score" id="score" aria-live="off"></p>
+  </header>
+
+  <section id="game">
+    <div class="prog">
+      <p class="count" id="count"></p>
+      <div class="ties" id="ties"></div>
+    </div>
+
+    <h2 id="prompt" tabindex="-1">Напиши, який по порядку <b>кожен предмет</b>.</h2>
+
+    <div class="stage">
+      <div class="rowwrap" id="rowwrap"><div class="row" id="row"></div></div>
+      <p class="scrollhint" id="shint" hidden>Гортай вбік, щоб побачити всі предмети →</p>
+      <p class="hint">Рахуємо зліва направо.</p>
+    </div>
+
+    <details class="tip" id="tip">
+      <summary>Підказка: як пишуться слова</summary>
+      <ul class="chips" id="chips"></ul>
+    </details>
+
+    <div class="foot">
+      <p class="fb" id="fb" role="status" aria-live="polite"></p>
+      <button type="button" class="act" id="act">Перевірити</button>
+    </div>
+  </section>
+
+  <section id="result" tabindex="-1" hidden></section>
+</main>
+
+<script>
+(function () {
+  var ORD = ['перший', 'другий', 'третій', 'четвертий', "п'ятий"];
+  var LAST = 'останній';
+  var CATS = ['перший', 'другий', 'третій', 'четвертий', 'останній'];
+  var POOL = [
+    { e: '⚽', n: "м'яч" }, { e: '🏠', n: 'будинок' }, { e: '🚌', n: 'автобус' },
+    { e: '🍄', n: 'гриб' }, { e: '🍉', n: 'кавун' }, { e: '🍌', n: 'банан' },
+    { e: '🍩', n: 'пончик' }, { e: '⏰', n: 'годинник' }, { e: '🔑', n: 'ключ' },
+    { e: '✏️', n: 'олівець' }, { e: '🎩', n: 'капелюх' }, { e: '🚲', n: 'велосипед' },
+    { e: '✈️', n: 'літак' }, { e: '🐻', n: 'ведмідь' }, { e: '🐘', n: 'слон' },
+    { e: '🐱', n: 'кіт' }, { e: '🐶', n: 'пес' }, { e: '🐰', n: 'зайчик' },
+    { e: '🚜', n: 'трактор' }, { e: '🚁', n: 'гелікоптер' }, { e: '🍍', n: 'ананас' },
+    { e: '🥁', n: 'барабан' }, { e: '🏰', n: 'замок' }, { e: '⛺', n: 'намет' }
+  ];
+  var TOTAL = 10;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var elScore = $('score'), elCount = $('count'), elTies = $('ties');
+  var elRow = $('row'), elWrap = $('rowwrap'), elShint = $('shint'), elChips = $('chips'), elTip = $('tip');
+  var elFb = $('fb'), elAct = $('act'), elGame = $('game'), elResult = $('result');
+
+  var st = null;
+
+  function shuffle(a) {
+    a = a.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  // Приводить відповідь до єдиного вигляду: регістр, пробіли, апостроф, латинські літери, схожі на кириличні.
+  function norm(s) {
+    s = String(s).toLowerCase()
+      .replace(/[’ʼ`´‘′]/g, "'")
+      .replace(/\s+/g, ' ')
+      .trim();
+    var map = { a: 'а', c: 'с', e: 'е', i: 'і', o: 'о', p: 'р', x: 'х', y: 'у' };
+    return s.replace(/[aceiopxy]/g, function (ch) { return map[ch]; });
+  }
+
+  function makeQuestions() {
+    var ns, ok, tries = 0;
+    do {
+      ns = shuffle([3, 3, 3, 4, 4, 4, 4, 5, 5, 5]);
+      ok = true;
+      for (var i = 1; i < ns.length; i++) {
+        if (ns[i] === ns[i - 1]) { ok = false; break; }
+      }
+      tries++;
+    } while (!ok && tries < 300);
+
+    var prev = [];
+    return ns.map(function (n) {
+      var fresh = shuffle(POOL.filter(function (o) { return prev.indexOf(o.e) < 0; }));
+      var items = fresh.slice(0, n);
+      prev = items.map(function (o) { return o.e; });
+      var exp = items.map(function (_, i) {
+        return i === n - 1
+          ? { primary: LAST, acc: [LAST, ORD[i]] }
+          : { primary: ORD[i], acc: [ORD[i]] };
+      });
+      return { n: n, items: items, exp: exp };
+    });
+  }
+
+  function newGame() {
+    st = { qs: makeQuestions(), i: 0, score: 0, results: [], done: false };
+    elResult.hidden = true;
+    elGame.hidden = false;
+    renderGame(false);
+  }
+
+  function renderTies() {
+    var h = '';
+    for (var i = 0; i < TOTAL; i++) {
+      var c = 'tie';
+      if (i < st.results.length) c += st.results[i].ok ? ' ok' : ' bad';
+      else if (i === st.i) c += ' cur';
+      h += '<span class="' + c + '"></span>';
+    }
+    elTies.innerHTML = h;
+    elTies.setAttribute('role', 'img');
+    elTies.setAttribute('aria-label', 'Питання ' + (st.i + 1) + ' з ' + TOTAL);
+  }
+
+  function renderScore() {
+    elScore.innerHTML = 'Правильно: <b>' + st.score + '</b>';
+  }
+
+  function updateScrollHint() {
+    elShint.hidden = !(elWrap.scrollWidth > elWrap.clientWidth + 2);
+  }
+
+  function renderGame(focusFirst) {
+    var q = st.qs[st.i];
+    elCount.textContent = 'Питання ' + (st.i + 1) + ' з ' + TOTAL;
+    renderScore();
+    renderTies();
+
+    var h = '';
+    q.items.forEach(function (o, i) {
+      h += '<div class="cell">' +
+        '<div class="obj" role="img" aria-label="' + o.n + '">' + o.e + '</div>' +
+        '<input class="in" id="in' + i + '" data-i="' + i + '" type="text" lang="uk" autocomplete="off" ' +
+        'autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="' + (i === q.n - 1 ? 'done' : 'next') + '" ' +
+        'aria-label="Який по порядку: ' + o.n + '">' +
+        '<div class="fbk" id="f' + i + '"></div>' +
+        '</div>';
+    });
+    elRow.style.setProperty('--n', q.n);
+    elRow.innerHTML = h;
+    elWrap.scrollLeft = 0;
+
+    elChips.innerHTML = shuffle(q.exp.map(function (x) { return x.primary; })).map(function (w) {
+      return '<li>' + w + '</li>';
+    }).join('');
+    elTip.open = false;
+
+    elFb.textContent = '';
+    elFb.className = 'fb';
+    elAct.textContent = 'Перевірити';
+    elAct.setAttribute('data-mode', 'check');
+    st.done = false;
+    updateScrollHint();
+    if (focusFirst) $('in0').focus();
+  }
+
+  function check() {
+    if (!st || st.done) return;
+    var q = st.qs[st.i];
+    var inputs = elRow.querySelectorAll('.in');
+
+    for (var k = 0; k < inputs.length; k++) {
+      if (!inputs[k].value.trim()) {
+        elFb.textContent = 'Заповни всі поля.';
+        elFb.className = 'fb bad';
+        inputs[k].focus();
+        return;
+      }
+    }
+
+    var good = 0, usedAlt = false, items = [];
+    Array.prototype.forEach.call(inputs, function (inp, i) {
+      var e = q.exp[i];
+      var val = norm(inp.value);
+      var ok = e.acc.map(norm).indexOf(val) >= 0;
+      if (ok) {
+        good++;
+        if (val !== norm(e.primary)) usedAlt = true;
+      }
+      inp.readOnly = true;
+      inp.classList.add(ok ? 'ok' : 'bad');
+      $('f' + i).innerHTML = ok
+        ? '<span class="y" aria-label="Правильно">✓</span>'
+        : '<span class="x">✗ ' + e.primary + '</span>';
+      items.push({ exp: e.primary, ok: ok });
+    });
+
+    var all = good === q.n;
+    st.done = true;
+    if (all) st.score++;
+    st.results.push({ ok: all, items: items });
+
+    var msg = all ? 'Усі правильно!' : 'Правильно: ' + good + ' з ' + q.n + '. Виправлення стоять під полями.';
+    if (usedAlt) msg += ' Останній предмет можна назвати й за номером, але ми кажемо «останній».';
+    elFb.textContent = msg;
+    elFb.className = 'fb ' + (all ? 'ok' : 'bad');
+
+    renderScore();
+    renderTies();
+    elAct.textContent = st.i === TOTAL - 1 ? 'Результат' : 'Далі';
+    elAct.setAttribute('data-mode', 'next');
+    elAct.focus();
+  }
+
+  function next() {
+    st.i++;
+    if (st.i >= TOTAL) { showResult(); return; }
+    renderGame(true);
+  }
+
+  function showResult() {
+    var per = {};
+    CATS.forEach(function (c) { per[c] = { t: 0, c: 0 }; });
+    var wt = 0, wc = 0;
+    st.results.forEach(function (r) {
+      r.items.forEach(function (it) {
+        per[it.exp].t++;
+        wt++;
+        if (it.ok) { per[it.exp].c++; wc++; }
+      });
+    });
+
+    var msg;
+    if (st.score === TOTAL) msg = 'Усі відповіді правильні. Ти добре знаєш порядок предметів.';
+    else if (st.score >= 8) msg = 'Дуже добре. Потренуй ще слова, де були помилки.';
+    else if (st.score >= 5) msg = 'Непогано. Пройди тренажер ще раз, щоб закріпити слова.';
+    else msg = 'Потрібно ще потренуватися. Пройди тренажер ще раз і рахуй зліва направо.';
+
+    var rows = CATS.filter(function (c) { return per[c].t > 0; }).map(function (c) {
+      var p = per[c];
+      var pct = Math.round(p.c / p.t * 100);
+      return '<li><span class="w">' + c + '</span>' +
+        '<span class="bar"><i class="' + (p.c === p.t ? '' : 'part') + '" style="width:' + pct + '%"></i></span>' +
+        '<span class="n">' + p.c + ' з ' + p.t + '</span></li>';
+    }).join('');
+
+    elResult.innerHTML =
+      '<div class="res">' +
+      '<p class="eyebrow">Твій результат</p>' +
+      '<p class="big">' + st.score + ' з ' + TOTAL + '</p>' +
+      '<p class="words">Питань без помилок. Слів написано правильно: ' + wc + ' з ' + wt + '.</p>' +
+      '<p class="msg">' + msg + '</p>' +
+      '<ul class="brk">' + rows + '</ul>' +
+      '<button type="button" class="act" id="again">Пройти ще раз</button>' +
+      '</div>';
+    elGame.hidden = true;
+    elResult.hidden = false;
+    renderScore();
+    elResult.focus();
+  }
+
+  elAct.addEventListener('click', function () {
+    if (elAct.getAttribute('data-mode') === 'next') next();
+    else check();
+  });
+  elResult.addEventListener('click', function (e) {
+    if (e.target.closest('#again')) newGame();
+  });
+  elRow.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' || !e.target.classList.contains('in') || st.done) return;
+    e.preventDefault();
+    var q = st.qs[st.i];
+    var i = parseInt(e.target.getAttribute('data-i'), 10);
+    if (i < q.n - 1) $('in' + (i + 1)).focus();
+    else check();
+  });
+  elRow.addEventListener('input', function () {
+    if (!st.done && elFb.className.indexOf('bad') >= 0) {
+      elFb.textContent = '';
+      elFb.className = 'fb';
+    }
+  });
+  window.addEventListener('resize', updateScrollHint);
+
+  newGame();
+})();
+</script>
+
+</body></html>

@@ -1,4 +1,3 @@
-
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Перший, другий, останній</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -6,7 +5,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&family=Rubik+Mono+One&display=swap">
 <style>
-  /* Layout: one column. Progress ties, task line, a squared-notebook stage (3-5 objects in a row, an input under each), word hint, check/next button. */
+  /* Layout: one column. Progress ties, task line, a squared-notebook stage (3-5 objects in a row, empty slots under each; the last object gets two slots), a bank of word blocks to drag, check/next button. */
   :root {
     --bg: #E8EEF6;
     --surface: #FFFFFF;
@@ -14,6 +13,7 @@
     --muted: #55657F;
     --line: #C3D1E6;
     --grid: #DCE8F6;
+    --slot-line: #8396B8;
     --pen: #1B3FA6;
     --accent: #2347B8;
     --accent-ink: #FFFFFF;
@@ -33,7 +33,8 @@
       --muted: #9DAECB;
       --line: #2B3C59;
       --grid: #1E2E4A;
-      --pen: #9DB9FF;
+      --slot-line: #6C82AB;
+      --pen: #B5CAFF;
       --accent: #7FA0FF;
       --accent-ink: #0B1530;
       --accent-soft: #22345C;
@@ -51,7 +52,8 @@
     --muted: #9DAECB;
     --line: #2B3C59;
     --grid: #1E2E4A;
-    --pen: #9DB9FF;
+    --slot-line: #6C82AB;
+    --pen: #B5CAFF;
     --accent: #7FA0FF;
     --accent-ink: #0B1530;
     --accent-soft: #22345C;
@@ -95,7 +97,7 @@
 
   #prompt {
     margin: 0;
-    font-size: clamp(1.25rem, 4.2vw, 1.65rem);
+    font-size: clamp(1.2rem, 4vw, 1.55rem);
     font-weight: 500;
     line-height: 1.3;
     text-wrap: balance;
@@ -117,9 +119,10 @@
   .rowwrap { overflow-x: auto; padding-bottom: 4px; }
   .row {
     display: grid;
-    grid-template-columns: repeat(var(--n, 4), minmax(5.4rem, 9rem));
-    gap: 8px;
+    grid-template-columns: repeat(var(--n, 4), minmax(6.2rem, 9rem));
+    gap: 10px;
     justify-content: center;
+    align-items: start;
     width: 100%;
     min-width: min-content;
   }
@@ -132,21 +135,59 @@
     padding: 6px 0;
     user-select: none;
   }
-  .in {
-    width: 100%;
+  .slots { display: grid; gap: 6px; }
+  .slot {
+    height: 46px;
     min-width: 0;
-    height: 50px;
-    padding: 0 6px;
-    border: 2px solid var(--line);
+    border: 2px dashed var(--slot-line);
     border-radius: 10px;
     background: var(--surface);
-    color: var(--pen);
-    font: 500 1rem var(--font-ui);
-    text-align: center;
+    display: grid;
+    place-items: center;
   }
-  .in:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
-  .in.ok { border-color: var(--ok); background: var(--ok-soft); }
-  .in.bad { border-color: var(--bad); background: var(--bad-soft); }
+  .slot[role="button"] { cursor: pointer; }
+  .slot:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .slot.over { border-style: solid; border-color: var(--accent); background: var(--accent-soft); }
+  .slot.filled { border: 0; background: transparent; }
+
+  .block {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 46px;
+    margin: 0;
+    padding: 0 14px;
+    border: 2px solid var(--accent);
+    border-radius: 10px;
+    background: var(--accent-soft);
+    color: var(--pen);
+    font: 600 0.95rem var(--font-ui);
+    white-space: nowrap;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+  .block.last { background: var(--accent); color: var(--accent-ink); }
+  .block:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+  .block.sel { box-shadow: 0 0 0 3px var(--surface), 0 0 0 6px var(--accent); }
+  .block.dragging { opacity: 0.3; }
+  .block:disabled { cursor: default; }
+  .slot .block { width: 100%; height: 100%; padding: 0 4px; }
+  .slot.ok .block { border-color: var(--ok); background: var(--ok-soft); color: var(--ink); }
+  .slot.bad .block { border-color: var(--bad); background: var(--bad-soft); color: var(--ink); }
+  .block.ghost {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 100;
+    pointer-events: none;
+    cursor: grabbing;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.28);
+  }
+
   .fbk { min-height: 1.5em; font-size: 0.82rem; font-weight: 500; text-align: center; line-height: 1.5; overflow-wrap: anywhere; }
   .fbk .y { color: var(--ok); font-size: 1rem; }
   .fbk .x { color: var(--bad); }
@@ -154,17 +195,21 @@
   .hint { margin: 10px 0 0; text-align: center; font-size: 0.85rem; color: var(--muted); }
   .scrollhint { margin: 6px 0 0; text-align: center; font-size: 0.85rem; color: var(--accent); font-weight: 500; }
 
-  .tip summary { cursor: pointer; color: var(--accent); font-weight: 500; width: fit-content; border-radius: 6px; }
-  .tip summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; padding: 0; list-style: none; }
-  .chips li {
-    padding: 4px 14px;
-    border: 1px solid var(--line);
-    border-radius: 999px;
+  .banklabel { margin: 0 0 8px; font-size: 0.85rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+  .bank {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+    min-height: 74px;
+    padding: 12px;
+    border: 2px dashed var(--line);
+    border-radius: 14px;
     background: var(--surface);
-    color: var(--pen);
-    font-weight: 500;
   }
+  .bank.over { border-color: var(--accent); background: var(--accent-soft); }
+  .bank .note { margin: 0; color: var(--muted); }
 
   .foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; min-height: 50px; }
   .fb { margin: 0; flex: 1 1 14rem; font-weight: 500; font-size: 1.05rem; text-wrap: pretty; }
@@ -223,7 +268,7 @@
       <div class="ties" id="ties"></div>
     </div>
 
-    <h2 id="prompt" tabindex="-1">Напиши, який по порядку <b>кожен предмет</b>.</h2>
+    <h2 id="prompt" tabindex="-1">Перетягни слова під предмети. Під <b>останнім</b> предметом став два блоки.</h2>
 
     <div class="stage">
       <div class="rowwrap" id="rowwrap"><div class="row" id="row"></div></div>
@@ -231,10 +276,11 @@
       <p class="hint">Рахуємо зліва направо.</p>
     </div>
 
-    <details class="tip" id="tip">
-      <summary>Підказка: як пишуться слова</summary>
-      <ul class="chips" id="chips"></ul>
-    </details>
+    <div class="bankwrap">
+      <p class="banklabel">Блоки зі словами</p>
+      <div class="bank" id="bank"></div>
+      <p class="hint">Можна й не тягнути: натисни на блок, а потім на місце під предметом.</p>
+    </div>
 
     <div class="foot">
       <p class="fb" id="fb" role="status" aria-live="polite"></p>
@@ -249,7 +295,7 @@
 (function () {
   var ORD = ['перший', 'другий', 'третій', 'четвертий', "п'ятий"];
   var LAST = 'останній';
-  var CATS = ['перший', 'другий', 'третій', 'четвертий', 'останній'];
+  var CATS = ORD.concat([LAST]);
   var POOL = [
     { e: '⚽', n: "м'яч" }, { e: '🏠', n: 'будинок' }, { e: '🚌', n: 'автобус' },
     { e: '🍄', n: 'гриб' }, { e: '🍉', n: 'кавун' }, { e: '🍌', n: 'банан' },
@@ -264,10 +310,10 @@
 
   var $ = function (id) { return document.getElementById(id); };
   var elScore = $('score'), elCount = $('count'), elTies = $('ties');
-  var elRow = $('row'), elWrap = $('rowwrap'), elShint = $('shint'), elChips = $('chips'), elTip = $('tip');
+  var elRow = $('row'), elWrap = $('rowwrap'), elShint = $('shint'), elBank = $('bank');
   var elFb = $('fb'), elAct = $('act'), elGame = $('game'), elResult = $('result');
 
-  var st = null;
+  var st = null, drag = null, suppress = false;
 
   function shuffle(a) {
     a = a.slice();
@@ -276,16 +322,6 @@
       var t = a[i]; a[i] = a[j]; a[j] = t;
     }
     return a;
-  }
-
-  // Приводить відповідь до єдиного вигляду: регістр, пробіли, апостроф, латинські літери, схожі на кириличні.
-  function norm(s) {
-    s = String(s).toLowerCase()
-      .replace(/[’ʼ`´‘′]/g, "'")
-      .replace(/\s+/g, ' ')
-      .trim();
-    var map = { a: 'а', c: 'с', e: 'е', i: 'і', o: 'о', p: 'р', x: 'х', y: 'у' };
-    return s.replace(/[aceiopxy]/g, function (ch) { return map[ch]; });
   }
 
   function makeQuestions() {
@@ -304,17 +340,17 @@
       var fresh = shuffle(POOL.filter(function (o) { return prev.indexOf(o.e) < 0; }));
       var items = fresh.slice(0, n);
       prev = items.map(function (o) { return o.e; });
-      var exp = items.map(function (_, i) {
-        return i === n - 1
-          ? { primary: LAST, acc: [LAST, ORD[i]] }
-          : { primary: ORD[i], acc: [ORD[i]] };
-      });
-      return { n: n, items: items, exp: exp };
+      var cells = [], k = 0;
+      for (var i = 0; i < n; i++) {
+        if (i < n - 1) cells.push({ slots: [k++], need: [ORD[i]] });
+        else { cells.push({ slots: [k, k + 1], need: [ORD[n - 1], LAST] }); k += 2; }
+      }
+      return { n: n, items: items, cells: cells, words: ORD.slice(0, n).concat([LAST]) };
     });
   }
 
   function newGame() {
-    st = { qs: makeQuestions(), i: 0, score: 0, results: [], done: false };
+    st = { qs: makeQuestions(), i: 0, score: 0, results: [], done: false, place: [], order: [], sel: null, res: null };
     elResult.hidden = true;
     elGame.hidden = false;
     renderGame(false);
@@ -341,81 +377,278 @@
     elShint.hidden = !(elWrap.scrollWidth > elWrap.clientWidth + 2);
   }
 
-  function renderGame(focusFirst) {
+  function say(text, cls) {
+    elFb.textContent = text;
+    elFb.className = 'fb' + (cls ? ' ' + cls : '');
+  }
+  function clearMsg() {
+    if (!st.done) say('', '');
+  }
+
+  function blockHtml(w, disabled, sel) {
+    return '<button type="button" class="block' + (w === LAST ? ' last' : '') + (sel ? ' sel' : '') +
+      '" data-word="' + w + '"' + (disabled ? ' disabled' : '') +
+      (sel !== undefined ? ' aria-pressed="' + (sel ? 'true' : 'false') + '"' : '') + '>' + w + '</button>';
+  }
+
+  // Малює вміст місць і банку блоків за станом st.place / st.sel.
+  function paint() {
+    Array.prototype.forEach.call(elRow.querySelectorAll('.slot'), function (el) {
+      var s = parseInt(el.getAttribute('data-s'), 10);
+      var w = st.place[s];
+      var cls = 'slot';
+      if (w) {
+        cls += ' filled';
+        if (st.res) cls += st.res[s] ? ' ok' : ' bad';
+        el.className = cls;
+        el.removeAttribute('role');
+        el.removeAttribute('tabindex');
+        el.removeAttribute('aria-label');
+        el.innerHTML = blockHtml(w, st.done);
+      } else {
+        el.className = cls;
+        el.innerHTML = '';
+        el.setAttribute('role', 'button');
+        el.setAttribute('tabindex', st.done ? '-1' : '0');
+        el.setAttribute('aria-label', el.getAttribute('data-label') +
+          (st.sel ? '. Поставити сюди блок «' + st.sel + '»' : '. Порожньо'));
+      }
+    });
+    var left = st.order.filter(function (w) { return st.place.indexOf(w) < 0; });
+    elBank.innerHTML = left.length
+      ? left.map(function (w) { return blockHtml(w, st.done, w === st.sel); }).join('')
+      : '<p class="note">Усі блоки на місцях.</p>';
+  }
+
+  function renderGame(focusBank) {
     var q = st.qs[st.i];
     elCount.textContent = 'Питання ' + (st.i + 1) + ' з ' + TOTAL;
     renderScore();
     renderTies();
 
+    st.place = [];
+    for (var s = 0; s <= q.n; s++) st.place.push(null);
+    var order, tries = 0;
+    do { order = shuffle(q.words); tries++; } while (order.join() === q.words.join() && tries < 10);
+    st.order = order;
+    st.sel = null;
+    st.res = null;
+    st.done = false;
+
     var h = '';
     q.items.forEach(function (o, i) {
-      h += '<div class="cell">' +
-        '<div class="obj" role="img" aria-label="' + o.n + '">' + o.e + '</div>' +
-        '<input class="in" id="in' + i + '" data-i="' + i + '" type="text" lang="uk" autocomplete="off" ' +
-        'autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="' + (i === q.n - 1 ? 'done' : 'next') + '" ' +
-        'aria-label="Який по порядку: ' + o.n + '">' +
-        '<div class="fbk" id="f' + i + '"></div>' +
-        '</div>';
+      var c = q.cells[i];
+      h += '<div class="cell"><div class="obj" role="img" aria-label="' + o.n + '">' + o.e + '</div><div class="slots">';
+      c.slots.forEach(function (s, j) {
+        var lbl = 'Місце під предметом «' + o.n + '»' + (c.slots.length > 1 ? ', ' + (j + 1) + ' з ' + c.slots.length : '');
+        h += '<div class="slot" data-s="' + s + '" data-label="' + lbl + '"></div>';
+      });
+      h += '</div><div class="fbk" id="f' + i + '"></div></div>';
     });
     elRow.style.setProperty('--n', q.n);
     elRow.innerHTML = h;
     elWrap.scrollLeft = 0;
 
-    elChips.innerHTML = shuffle(q.exp.map(function (x) { return x.primary; })).map(function (w) {
-      return '<li>' + w + '</li>';
-    }).join('');
-    elTip.open = false;
-
-    elFb.textContent = '';
-    elFb.className = 'fb';
+    say('', '');
     elAct.textContent = 'Перевірити';
     elAct.setAttribute('data-mode', 'check');
-    st.done = false;
+    paint();
     updateScrollHint();
-    if (focusFirst) $('in0').focus();
+    if (focusBank) {
+      var f = elBank.querySelector('.block');
+      if (f) f.focus();
+    }
   }
+
+  // Поставити слово на місце s. from — місце, звідки його взяли (null, якщо з банку).
+  function putInSlot(word, s, from) {
+    if (from === s) return;
+    var prev = st.place[s];
+    st.place[s] = word;
+    if (from !== null) st.place[from] = prev || null;
+  }
+
+  function dropOn(el, word, from) {
+    var sl = el && el.closest ? el.closest('.slot') : null;
+    if (sl) {
+      putInSlot(word, parseInt(sl.getAttribute('data-s'), 10), from);
+    } else if (el && el.closest && el.closest('#bank')) {
+      if (from !== null) st.place[from] = null;
+    }
+    st.sel = null;
+  }
+
+  function refocus() {
+    var t = elBank.querySelector('.block.sel') || elBank.querySelector('.block') || elAct;
+    t.focus();
+  }
+
+  // Натискання: вибрати блок у банку, повернути блок із місця, поставити вибраний блок на порожнє місце.
+  elGame.addEventListener('click', function (e) {
+    if (suppress || !st || st.done) return;
+    var kb = e.detail === 0;
+    var b = e.target.closest('.block');
+    if (b) {
+      var w = b.getAttribute('data-word');
+      var slotEl = b.closest('.slot');
+      if (slotEl) {
+        var s = parseInt(slotEl.getAttribute('data-s'), 10);
+        if (st.sel) putInSlot(st.sel, s, null);
+        else st.place[s] = null;
+        st.sel = null;
+      } else {
+        st.sel = (st.sel === w) ? null : w;
+      }
+      clearMsg();
+      paint();
+      if (kb) refocus();
+      return;
+    }
+    var sl = e.target.closest('.slot');
+    if (sl && !sl.classList.contains('filled')) {
+      if (st.sel) {
+        putInSlot(st.sel, parseInt(sl.getAttribute('data-s'), 10), null);
+        st.sel = null;
+        clearMsg();
+        paint();
+        if (kb) refocus();
+      } else {
+        say('Спочатку вибери блок внизу.', '');
+      }
+    }
+  });
+
+  elRow.addEventListener('keydown', function (e) {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('slot')) {
+      e.preventDefault();
+      e.target.click();
+    }
+  });
+
+  // Перетягування мишею і пальцем.
+  elGame.addEventListener('pointerdown', function (e) {
+    if (!st || st.done || drag) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    var b = e.target.closest('.block');
+    if (!b || b.disabled) return;
+    var slotEl = b.closest('.slot');
+    drag = {
+      id: e.pointerId, el: b, word: b.getAttribute('data-word'),
+      from: slotEl ? parseInt(slotEl.getAttribute('data-s'), 10) : null,
+      x0: e.clientX, y0: e.clientY, px: e.clientX, py: e.clientY,
+      moved: false, ghost: null, over: null, raf: 0, w: 0, h: 0,
+      off: e.pointerType === 'touch' ? 30 : 0
+    };
+  });
+
+  function startDrag() {
+    var r = drag.el.getBoundingClientRect();
+    var g = drag.el.cloneNode(true);
+    g.className += ' ghost';
+    g.removeAttribute('aria-pressed');
+    g.setAttribute('aria-hidden', 'true');
+    g.setAttribute('tabindex', '-1');
+    g.style.width = r.width + 'px';
+    g.style.height = r.height + 'px';
+    document.body.appendChild(g);
+    drag.ghost = g;
+    drag.w = r.width;
+    drag.h = r.height;
+    drag.el.classList.add('dragging');
+    drag.moved = true;
+    drag.raf = requestAnimationFrame(tick);
+  }
+
+  function moveGhost() {
+    drag.ghost.style.transform = 'translate(' + (drag.px - drag.w / 2) + 'px,' + (drag.py - drag.off - drag.h / 2) + 'px) scale(1.06)';
+  }
+
+  function hover() {
+    var el = document.elementFromPoint(drag.px, drag.py - drag.off);
+    var t = el && el.closest ? (el.closest('.slot') || el.closest('#bank')) : null;
+    if (t !== drag.over) {
+      if (drag.over) drag.over.classList.remove('over');
+      if (t) t.classList.add('over');
+      drag.over = t;
+    }
+  }
+
+  // Біля краю ряду предметів прокручує його, щоб можна було дотягнутися до дальніх місць.
+  function tick() {
+    if (!drag || !drag.moved) return;
+    var r = elWrap.getBoundingClientRect();
+    if (elWrap.scrollWidth > elWrap.clientWidth && drag.py > r.top - 60 && drag.py < r.bottom + 60) {
+      if (drag.px < r.left + 40) elWrap.scrollLeft -= 10;
+      else if (drag.px > r.right - 40) elWrap.scrollLeft += 10;
+    }
+    hover();
+    drag.raf = requestAnimationFrame(tick);
+  }
+
+  window.addEventListener('pointermove', function (e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    drag.px = e.clientX;
+    drag.py = e.clientY;
+    if (!drag.moved) {
+      if (Math.abs(drag.px - drag.x0) + Math.abs(drag.py - drag.y0) < 8) return;
+      startDrag();
+    }
+    moveGhost();
+    hover();
+  });
+
+  function endDrag(e, cancel) {
+    if (!drag || e.pointerId !== drag.id) return;
+    var d = drag;
+    drag = null;
+    if (!d.moved) return;
+    cancelAnimationFrame(d.raf);
+    var target = cancel ? null : document.elementFromPoint(d.px, d.py - d.off);
+    if (d.over) d.over.classList.remove('over');
+    d.ghost.remove();
+    d.el.classList.remove('dragging');
+    if (target) dropOn(target, d.word, d.from);
+    suppress = true;
+    setTimeout(function () { suppress = false; }, 0);
+    clearMsg();
+    paint();
+  }
+  window.addEventListener('pointerup', function (e) { endDrag(e, false); });
+  window.addEventListener('pointercancel', function (e) { endDrag(e, true); });
 
   function check() {
     if (!st || st.done) return;
     var q = st.qs[st.i];
-    var inputs = elRow.querySelectorAll('.in');
-
-    for (var k = 0; k < inputs.length; k++) {
-      if (!inputs[k].value.trim()) {
-        elFb.textContent = 'Заповни всі поля.';
-        elFb.className = 'fb bad';
-        inputs[k].focus();
-        return;
-      }
+    if (st.place.some(function (w) { return !w; })) {
+      say('Постав усі блоки на місця.', 'bad');
+      return;
     }
 
-    var good = 0, usedAlt = false, items = [];
-    Array.prototype.forEach.call(inputs, function (inp, i) {
-      var e = q.exp[i];
-      var val = norm(inp.value);
-      var ok = e.acc.map(norm).indexOf(val) >= 0;
-      if (ok) {
-        good++;
-        if (val !== norm(e.primary)) usedAlt = true;
-      }
-      inp.readOnly = true;
-      inp.classList.add(ok ? 'ok' : 'bad');
-      $('f' + i).innerHTML = ok
+    st.res = [];
+    var good = 0, words = [];
+    q.cells.forEach(function (c, i) {
+      var placed = c.slots.map(function (s) { return st.place[s]; });
+      var cellOk = true;
+      c.need.forEach(function (w) {
+        var ok = placed.indexOf(w) >= 0;
+        if (!ok) cellOk = false;
+        words.push({ w: w, ok: ok });
+      });
+      c.slots.forEach(function (s, j) { st.res[s] = c.need.indexOf(placed[j]) >= 0; });
+      if (cellOk) good++;
+      $('f' + i).innerHTML = cellOk
         ? '<span class="y" aria-label="Правильно">✓</span>'
-        : '<span class="x">✗ ' + e.primary + '</span>';
-      items.push({ exp: e.primary, ok: ok });
+        : '<span class="x">✗ ' + c.need.join(' і ') + '</span>';
     });
 
     var all = good === q.n;
     st.done = true;
+    st.sel = null;
     if (all) st.score++;
-    st.results.push({ ok: all, items: items });
+    st.results.push({ ok: all, words: words });
 
-    var msg = all ? 'Усі правильно!' : 'Правильно: ' + good + ' з ' + q.n + '. Виправлення стоять під полями.';
-    if (usedAlt) msg += ' Останній предмет можна назвати й за номером, але ми кажемо «останній».';
-    elFb.textContent = msg;
-    elFb.className = 'fb ' + (all ? 'ok' : 'bad');
-
+    say(all ? 'Усі правильно!' : 'Правильно: ' + good + ' з ' + q.n + ' предметів. Виправлення стоять під блоками.', all ? 'ok' : 'bad');
+    paint();
     renderScore();
     renderTies();
     elAct.textContent = st.i === TOTAL - 1 ? 'Результат' : 'Далі';
@@ -434,10 +667,10 @@
     CATS.forEach(function (c) { per[c] = { t: 0, c: 0 }; });
     var wt = 0, wc = 0;
     st.results.forEach(function (r) {
-      r.items.forEach(function (it) {
-        per[it.exp].t++;
+      r.words.forEach(function (it) {
+        per[it.w].t++;
         wt++;
-        if (it.ok) { per[it.exp].c++; wc++; }
+        if (it.ok) { per[it.w].c++; wc++; }
       });
     });
 
@@ -459,7 +692,7 @@
       '<div class="res">' +
       '<p class="eyebrow">Твій результат</p>' +
       '<p class="big">' + st.score + ' з ' + TOTAL + '</p>' +
-      '<p class="words">Питань без помилок. Слів написано правильно: ' + wc + ' з ' + wt + '.</p>' +
+      '<p class="words">Питань без помилок. Блоків поставлено правильно: ' + wc + ' з ' + wt + '.</p>' +
       '<p class="msg">' + msg + '</p>' +
       '<ul class="brk">' + rows + '</ul>' +
       '<button type="button" class="act" id="again">Пройти ще раз</button>' +
@@ -476,20 +709,6 @@
   });
   elResult.addEventListener('click', function (e) {
     if (e.target.closest('#again')) newGame();
-  });
-  elRow.addEventListener('keydown', function (e) {
-    if (e.key !== 'Enter' || !e.target.classList.contains('in') || st.done) return;
-    e.preventDefault();
-    var q = st.qs[st.i];
-    var i = parseInt(e.target.getAttribute('data-i'), 10);
-    if (i < q.n - 1) $('in' + (i + 1)).focus();
-    else check();
-  });
-  elRow.addEventListener('input', function () {
-    if (!st.done && elFb.className.indexOf('bad') >= 0) {
-      elFb.textContent = '';
-      elFb.className = 'fb';
-    }
   });
   window.addEventListener('resize', updateScrollHint);
 

@@ -1,4 +1,3 @@
-
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <!DOCTYPE html>
 <html lang="uk">
@@ -36,7 +35,6 @@ button:focus-visible,.knob:focus-visible{outline:3px solid var(--knob);outline-o
 .knob{position:absolute;right:10px;top:0;height:20px;padding:0 9px;gap:5px;display:flex;align-items:center;justify-content:flex-end;border-radius:999px;background:var(--knob);color:#fff;font-weight:800;font-size:12px;white-space:nowrap;cursor:grab;touch-action:none;user-select:none;transition:transform .12s,background-color .2s;box-shadow:0 1px 4px rgba(0,0,0,.3);z-index:2}
 .knob.drag{cursor:grabbing;z-index:3;transition:background-color .2s}
 .knob.ok{background:var(--ok)}
-.knob.bad{background:var(--bad)}
 .tm{flex:none}
 .ic{flex:none;width:15px;height:15px;border-radius:50%;background:rgba(255,255,255,.32);font-size:10px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .ic:hover{background:rgba(255,255,255,.55)}
@@ -46,14 +44,12 @@ button:focus-visible,.knob:focus-visible{outline:3px solid var(--knob);outline-o
 .wd input{grid-area:1/1;width:100%;min-width:0;font:inherit;font-weight:700;color:#1e2433;background:#fff;border:0;border-radius:999px;padding:0 8px;outline:0;user-select:text;cursor:text}
 .wd input::placeholder{color:#667085;font-weight:600}
 .wd input:focus{box-shadow:inset 0 0 0 2px var(--knob)}
-.wd input.okk{background:#dcfce7}
-.wd input.rev{background:#fff;outline:2px dashed var(--ok);outline-offset:-2px}
 .table{flex:1;min-width:0;display:grid;grid-template-columns:1fr 78px;grid-template-rows:repeat(27,1fr);border:1px solid var(--line);border-left:0;border-radius:0 10px 10px 0;overflow:hidden}
 .table>div{display:flex;align-items:center;padding:0 10px;font-size:13px;border-top:1px solid rgba(128,138,160,.25);min-height:0;min-width:0}
 .table>.hd{border-top:0;font-weight:800;color:var(--mut);background:var(--card);flex-direction:column;justify-content:center;align-items:flex-start;gap:4px}
 .hd small{font-weight:600;font-size:11px;line-height:1.25}
 .top .stars{display:flex;gap:2px;font-size:24px;line-height:1}
-.top .stars span{color:var(--line);font-size:24px;transition:color .3s}
+.top .stars span{color:var(--line);font-size:32px;transition:color .3s}
 .top .stars span.on{color:#f5b700}
 .table>.pc{grid-column:2;justify-content:center;text-align:center;flex-direction:column;gap:2px;font-weight:800;font-size:12px;border-left:1px solid rgba(128,138,160,.35);padding:0 4px}
 .table>.pc span{font-size:20px;line-height:1}
@@ -61,12 +57,12 @@ button:focus-visible,.knob:focus-visible{outline:3px solid var(--knob);outline-o
 .hr b{font-weight:800;min-width:42px}
 .p0{background:var(--p0)}.p1{background:var(--p1)}.p2{background:var(--p2)}.p3{background:var(--p3)}
 .hr.hit{box-shadow:inset 4px 0 0 var(--knob)}
-.hr.ans{outline:2px dashed var(--ok);outline-offset:-2px}
 #ask{margin:0 0 6px;font-size:20px;font-weight:800}
 .answer{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-weight:800}
-select{font:inherit;font-weight:700;padding:7px 8px;border-radius:10px;border:2px solid var(--line);background:var(--card);color:var(--ink);max-width:100%}
-select:disabled{opacity:.7}
-select.okk{border-color:var(--ok)}select.badd{border-color:var(--bad)}
+#reply{flex:1 1 240px;min-width:0;font:inherit;font-weight:700;font-size:16px;padding:9px 12px;border-radius:10px;border:2px solid var(--line);background:var(--card);color:var(--ink)}
+#reply:focus-visible{outline:3px solid var(--knob);outline-offset:2px}
+#reply:disabled{opacity:.9}
+#reply.okk{border-color:var(--ok)}#reply.badd{border-color:var(--bad)}
 @media (max-width:900px){.game{flex-direction:column;height:auto}.left{overflow:visible}.board{width:100%;height:760px}.rail{width:124px}.knob.edit .wd{max-width:58px}.vsep{width:100%;height:2px}}
 @media (prefers-reduced-motion:reduce){.knob{transition:none}}
 @media (max-width:420px){.table{grid-template-columns:1fr 62px}.table>div{padding:0 6px;font-size:12px}.hr b{min-width:38px}}
@@ -78,7 +74,7 @@ select.okk{border-color:var(--ok)}select.badd{border-color:var(--bad)}
   <div class="top"><div id="qn"></div><div class="stars" id="stars"></div></div>
   <p id="task"></p>
   <p id="ask"></p>
-  <div class="answer"><span>Відповідь:</span><select id="s1"></select><select id="s2"></select><select id="s3"></select></div>
+  <div class="answer" id="answerRow"><label for="reply">Відповідь:</label><input id="reply" type="text" maxlength="60" autocomplete="off" autocapitalize="sentences" spellcheck="false"></div>
   <div class="bar"><button id="check">Перевірити</button><button id="next" disabled>Наступне питання</button><span id="msg"></span></div>
   </div>
   <div class="vsep"></div>
@@ -102,12 +98,17 @@ const SC=[
 ];
 const VERB={m:"був",f:"була",n:"було"};
 const $=id=>document.getElementById(id);
-const rail=$("rail"),table=$("table"),N=SC.length,sel=[$("s1"),$("s2"),$("s3")];
-let q=0,score=0,knobs=[],locked=false,drag=null,rowH=0,rows=[],ans=null;
+const rail=$("rail"),table=$("table"),N=SC.length,GOAL=3,reply=$("reply");
+reply.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();$("check").click()}});
+reply.addEventListener("input",()=>{if(!locked)reply.className=""});
+let q=0,score=0,knobs=[],locked=false,drag=null,rowH=0,rows=[],ans=null,tries=0,order=[],last=-1;
 const pad=h=>String(h).padStart(2,"0")+":00";
 const per=h=>PERIODS.findIndex(p=>h>=p[2]&&h<p[3]);
 const shuffle=a=>[...a].sort(()=>Math.random()-.5);
 const norm=t=>t.trim().toLowerCase().replace(/[’ʼ`]/g,"'");
+// only the last word of the sentence is checked; capital letters, extra spaces and punctuation are ignored
+const normAns=t=>norm(t).replace(/[.,!?;:]+/g," ").replace(/\s+/g," ").trim();
+const lastWord=t=>normAns(t).split(" ").pop();
 
 // table: 2 columns; column 2 has just 4 cells (ніч, ранок, день, вечір); fills the whole board height
 table.innerHTML='<div class="hd" style="grid-area:1/1/4/2"><b>Година</b><small>Перетягни повзунок на годину. Натисни ✎, щоб дописати, що тоді було</small></div><div class="hd" style="grid-area:1/2/4/3;align-items:center;text-align:center">Пора доби</div>';
@@ -137,15 +138,19 @@ function refresh(){
     if(k.idx>0)rows[k.idx-1].classList.add("hit");
   });
 }
-function stars(){$("stars").innerHTML=Array.from({length:N},(_,i)=>`<span class="${i<score?"on":""}">★</span>`).join("");$("stars").setAttribute("aria-label",`Зірок: ${score} з ${N}`)}
-function fill(el,opts){el.innerHTML='<option value="">…</option>'+opts.map(o=>`<option>${o}</option>`).join("");el.disabled=false;el.className=""}
+function stars(){$("stars").innerHTML=Array.from({length:GOAL},(_,i)=>`<span class="${i<score?"on":""}">★</span>`).join("");$("stars").setAttribute("aria-label",`Зірок: ${score} з ${GOAL}`)}
+// questions come in random order and start over (reshuffled) if the child needs more than 10
+function nextScenario(){
+  if(!order.length){order=shuffle(SC.map((_,i)=>i));if(order[0]===last)order.push(order.shift())}
+  return last=order.shift();
+}
 function openWord(k){if(locked)return;k.el.classList.add("edit");k.inp.focus()}
 
 function build(){
   rail.innerHTML="";rows.forEach(r=>r.classList.remove("hit","ans"));
   locked=false;$("msg").textContent="";
   $("check").disabled=false;$("next").disabled=true;$("next").textContent="Наступне питання";
-  const [intro,evs]=SC[q];
+  const [intro,evs]=SC[nextScenario()];
   const items=evs.map(([n,g,[a,b]])=>({n,g,h:a+Math.floor(Math.random()*(b-a+1))}));
   const sorted=[...items].sort((x,y)=>x.h-y.h);
   const mode=Math.random()<.5?"first":"last";
@@ -153,10 +158,8 @@ function build(){
   const shown=shuffle(items);
   $("task").innerHTML=intro+"<br>"+shown.map(e=>`${e.n} о <b>${pad(e.h)}</b>`).join(",<br>")+".";
   $("ask").textContent=mode==="first"?"Що було першим?":"Що було останнім?";
-  fill(sel[0],["Першим","Потім","Останнім"]);
-  fill(sel[1],["був","була","було"]);
-  fill(sel[2],shuffle(items.map(e=>e.n)));
-  $("qn").textContent=`Питання ${q+1} / ${N}`;stars();
+  $("answerRow").style.display="";reply.value="";reply.disabled=false;reply.className="";tries=0;
+  $("qn").textContent=`Питання ${q+1}`;stars();
   const lanes=shuffle([0,1,2]);
   knobs=shown.map((it,i)=>{
     const el=document.createElement("div");el.className="knob";el.tabIndex=0;
@@ -196,40 +199,35 @@ function move(k,i){
 
 $("check").onclick=()=>{
   if(locked)return;
-  const v=sel.map(s=>s.value);
-  if(v.some(x=>!x)){$("msg").textContent="Склади відповідь із трьох частин.";return}
-  locked=true;
-  const want=[ans.mode==="first"?"Першим":"Останнім",VERB[ans.item.g],ans.item.n];
-  sel.forEach((s,i)=>{s.disabled=true;s.className=v[i]===want[i]?"okk":"badd"});
-  const good=v.every((x,i)=>x===want[i]);
-  // words written on the knobs: right ones turn green (✓), wrong or missing ones are replaced by the real action
-  knobs.forEach(k=>{
-    const t=k.inp.value.trim();
-    if(t&&norm(t)===norm(k.word)){k.inp.className="okk";k.ic.textContent="✓"}
-    else if(t){k.inp.value=k.word;k.inp.className="rev";k.ic.textContent="✗"}
-    else if(!good){k.el.classList.add("edit");k.inp.value=k.word;k.inp.className="rev"}
-    k.sync();k.inp.readOnly=true;
-  });
-  if(good){score=Math.min(N,score+1);$("msg").textContent="Правильно! 🎉"}
-  else{
-    score=Math.max(0,score-1);
-    $("msg").textContent=`Правильна відповідь: ${want.join(" ")}.`;
-    knobs.forEach(k=>{if(!(k.idx>0&&k.idx-1===k.h)){k.el.classList.add("bad");rows[k.h].classList.add("ans")}});
+  const typed=reply.value.trim();
+  if(!typed){$("msg").textContent="Напиши відповідь у полі.";reply.focus();return}
+  const want=[ans.mode==="first"?"Першим":"Останнім",VERB[ans.item.g],ans.item.n].join(" ");
+  const good=lastWord(typed)===lastWord(want);
+  if(!good&&tries===0){ // first mistake: nothing is revealed, the child may fix the answer
+    tries=1;
+    reply.className="badd";reply.focus();
+    $("msg").textContent="Не зовсім. Виправ помилку й натисни «Перевірити» ще раз.";
+    return;
   }
+  locked=true;
+  reply.disabled=true;reply.className=good?"okk":"badd";
+  knobs.forEach(k=>{k.inp.readOnly=true}); // the check looks only at the sentence, knobs are not graded
+  if(good){score=Math.min(GOAL,score+1);$("msg").textContent=tries?"Тепер правильно! 👍":"Правильно! 🎉"}
+  else{const lose=score>0;score=Math.max(0,score-1);$("msg").textContent=`Правильна відповідь: ${want}.`+(lose?" Одну зірочку забрано.":"")}
   stars();
   $("check").disabled=true;$("next").disabled=false;
-  if(q===N-1)$("next").textContent="Завершити";
+  if(score>=GOAL)$("next").textContent="Завершити";
 };
 $("next").onclick=()=>{
   const t=$("next").textContent;
   if(t==="Завершити"){
-    $("task").textContent=`Гру завершено! Твій результат: ${score} з ${N}.`;
+    $("task").textContent=`Вітаю! Усі ${GOAL} зірки зібрано! 🎉 Питань пройдено: ${q+1}.`;
     $("qn").textContent="Готово";$("msg").textContent="";$("ask").textContent="";
     rail.innerHTML="";knobs=[];rows.forEach(r=>r.classList.remove("hit","ans"));
-    sel.forEach(s=>{s.disabled=true});
+    reply.value="";reply.disabled=true;reply.className="";$("answerRow").style.display="none";
     $("next").textContent="Грати знову";$("check").disabled=true;return;
   }
-  if(t==="Грати знову"){q=0;score=0;build();return}
+  if(t==="Грати знову"){q=0;score=0;order=[];build();return}
   q++;build();
 };
 build();

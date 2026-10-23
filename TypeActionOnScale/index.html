@@ -65,7 +65,7 @@ button:focus-visible,.knob:focus-visible{outline:3px solid var(--knob);outline-o
 #reply.okk{border-color:var(--ok)}#reply.badd{border-color:var(--bad)}
 @media (max-width:900px){.game{flex-direction:column;height:auto}.left{overflow:visible}.board{width:100%;height:760px}.rail{width:124px}.knob.edit .wd{max-width:58px}.vsep{width:100%;height:2px}}
 @media (prefers-reduced-motion:reduce){.knob{transition:none}}
-@media (max-width:420px){.table{grid-template-columns:1fr 62px}.table>div{padding:0 6px;font-size:12px}.hr b{min-width:38px}}
+@media (max-width:420px){.table{grid-template-columns:1fr 62px}.table>div{padding:0 6px;font-size:12px}.hr b{min-width:38px}.top .stars span{font-size:24px}}
 </style>
 </head>
 <body>
@@ -98,7 +98,7 @@ const SC=[
 ];
 const VERB={m:"був",f:"була",n:"було"};
 const $=id=>document.getElementById(id);
-const rail=$("rail"),table=$("table"),N=SC.length,GOAL=3,reply=$("reply");
+const rail=$("rail"),table=$("table"),N=SC.length,GOAL=7,reply=$("reply");
 reply.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();$("check").click()}});
 reply.addEventListener("input",()=>{if(!locked)reply.className=""});
 let q=0,score=0,knobs=[],locked=false,drag=null,rowH=0,rows=[],ans=null,tries=0,order=[],last=-1;
@@ -221,7 +221,7 @@ $("check").onclick=()=>{
 $("next").onclick=()=>{
   const t=$("next").textContent;
   if(t==="Завершити"){
-    $("task").textContent=`Вітаю! Усі ${GOAL} зірки зібрано! 🎉 Питань пройдено: ${q+1}.`;
+    $("task").textContent=`Вітаю! Усі зірки зібрано! 🎉 Питань пройдено: ${q+1}.`;
     $("qn").textContent="Готово";$("msg").textContent="";$("ask").textContent="";
     rail.innerHTML="";knobs=[];rows.forEach(r=>r.classList.remove("hit","ans"));
     reply.value="";reply.disabled=true;reply.className="";$("answerRow").style.display="none";
